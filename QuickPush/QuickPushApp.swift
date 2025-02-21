@@ -11,7 +11,7 @@ import LaunchAtLogin
 @main
 struct QuickPushApp: App {
   var body: some Scene {
-    MenuBarExtra("QuickPush", systemImage: "bell.badge.waveform.fill") {
+    MenuBarExtra("QuickPush", image: "MenuBarIcon") {
       VStack {
         ContentView()
         Divider()

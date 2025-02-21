@@ -28,6 +28,11 @@ struct ContentView: View {
   @State private var mutableContent: Bool = false
   @State private var contentAvailable: Bool = false
   
+  // Toast notification state
+  @State private var showToast: Bool = false
+  @State private var toastMessage: String = ""
+  @State private var toastType: ToastType = .success
+  
   var body: some View {
     VStack(spacing: 16) {
       // Title and Send Button
@@ -63,8 +68,7 @@ struct ContentView: View {
                         if trimmed.count <= 41 && trimmed.starts(with: "ExponentPushToken[") && trimmed.hasSuffix("]") {
                             tokens[index] = trimmed
                         } else {
-                            showAlert(title: "Invalid Token", 
-                                    message: "Token should be in format: ExponentPushToken[xxxxxxxxxxxxxxxxxxxxx]")
+                            showToast(message: "Token should be in format: ExponentPushToken[xxxxxxxxxxxxxxxxxxxxx]", type: .error)
                         }
                     }
                 }) {
@@ -192,6 +196,10 @@ struct ContentView: View {
     }
     .padding()
     .frame(minHeight: 410, maxHeight: showAdvancedSettings ? 650 : 410)
+    .overlay(
+      ToastView(message: toastMessage, type: toastType, isPresented: $showToast)
+        .animation(.easeInOut, value: showToast)
+    )
   }
   
   private func sendPushNotification() {
@@ -199,7 +207,9 @@ struct ContentView: View {
     
     guard !validTokens.isEmpty, !title.isEmpty else {
       showTitleError = title.isEmpty
-      print("Error: Missing required fields")
+      if title.isEmpty {
+        showToast(message: "Title is required", type: .error)
+      }
       return
     }
     
@@ -228,23 +238,69 @@ struct ContentView: View {
         switch result {
         case .success(let response):
           print("Push sent successfully: \(response)")
-          showAlert(title: "Success", message: "Push notification sent!")
+          showToast(message: "Push notification sent successfully!", type: .success)
         case .failure(let error):
           print("Failed to send push: \(error.localizedDescription)")
-          showAlert(title: "Error", message: error.localizedDescription)
+          showToast(message: error.localizedDescription, type: .error)
         }
       }
     }
   }
   
-  // Helper function to show alerts
-  private func showAlert(title: String, message: String) {
-    let alert = NSAlert()
-    alert.messageText = title
-    alert.informativeText = message
-    alert.alertStyle = .warning
-    alert.addButton(withTitle: "OK")
-    alert.runModal()
+  private func showToast(message: String, type: ToastType) {
+    toastMessage = message
+    toastType = type
+    showToast = true
+  }
+}
+
+// MARK: - Toast Types and View
+enum ToastType {
+  case success
+  case error
+  
+  var backgroundColor: Color {
+    switch self {
+    case .success: return Color.green.opacity(0.9)
+    case .error: return Color.red.opacity(0.9)
+    }
+  }
+  
+  var icon: String {
+    switch self {
+    case .success: return "checkmark.circle.fill"
+    case .error: return "exclamationmark.circle.fill"
+    }
+  }
+}
+
+struct ToastView: View {
+  let message: String
+  let type: ToastType
+  @Binding var isPresented: Bool
+  
+  var body: some View {
+    VStack {
+      Spacer()
+      if isPresented {
+        HStack(spacing: 12) {
+          Image(systemName: type.icon)
+          Text(message)
+            .foregroundColor(.white)
+        }
+        .padding()
+        .background(type.backgroundColor)
+        .cornerRadius(8)
+        .padding(.bottom, 20)
+        .onAppear {
+          DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            withAnimation {
+              isPresented = false
+            }
+          }
+        }
+      }
+    }
   }
 }
 

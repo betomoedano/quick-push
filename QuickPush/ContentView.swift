@@ -27,7 +27,7 @@ struct ContentView: View {
       
       ForEach(tokens.indices, id: \.self) { index in
         HStack {
-          TextField("Enter push token", text: $tokens[index])
+          TextField("Push Token e.g. ExponentPushToken[N1QHiEF4mnLGP8HeQrj9AR]", text: $tokens[index])
             .textFieldStyle(RoundedBorderTextFieldStyle())
           
           if tokens.count > 1 {
@@ -89,8 +89,45 @@ struct ContentView: View {
   }
   
   private func sendPushNotification() {
-    print("Sending push to: \(tokens.filter { !$0.isEmpty })")
-    // API call logic goes here
+    let validTokens = tokens.filter { !$0.isEmpty }
+    
+    guard !validTokens.isEmpty, !title.isEmpty else {
+      print("Error: Missing required fields")
+      return
+    }
+    
+    let notification = PushNotification(
+      to: validTokens,
+      title: title,
+      body: notificationBody.isEmpty ? " " : notificationBody,
+      ttl: Int(ttl),
+      expiration: Int(expiration),
+      priority: priority,
+      sound: sound.isEmpty ? nil : sound
+    )
+    
+    PushNotificationService.shared.sendPushNotification(notification: notification) { result in
+      DispatchQueue.main.async {
+        switch result {
+        case .success(let response):
+          print("Push sent successfully: \(response)")
+          showAlert(title: "Success", message: "Push notification sent!")
+        case .failure(let error):
+          print("Failed to send push: \(error.localizedDescription)")
+          showAlert(title: "Error", message: error.localizedDescription)
+        }
+      }
+    }
+  }
+  
+  // Helper function to show alerts
+  private func showAlert(title: String, message: String) {
+    let alert = NSAlert()
+    alert.messageText = title
+    alert.informativeText = message
+    alert.alertStyle = .warning
+    alert.addButton(withTitle: "OK")
+    alert.runModal()
   }
 }
 

@@ -12,7 +12,7 @@ struct QuickPushApp: App {
   var body: some Scene {
     MenuBarExtra("QuickPush", systemImage: "bell.badge.waveform.fill") {
       ContentView()
-        .frame(minWidth: 500)
+        .frame(minWidth: 400)
     }
     .menuBarExtraStyle(.window)
   }

@@ -45,7 +45,7 @@ struct ContentView: View {
             
             ForEach(tokens.indices, id: \.self) { index in
               HStack {
-                TextField("Push Token e.g. ExponentPushToken[N1QHiEF4mnLGP8HeQrj9AR]", text: $tokens[index])
+                TextField("e.g. ExponentPushToken[N1QHiEF4mnLGP8HeQrj9AR]", text: $tokens[index])
                   .textFieldStyle(RoundedBorderTextFieldStyle())
                 
                 Button(action: {
@@ -191,7 +191,7 @@ struct ContentView: View {
       .frame(maxWidth: .infinity)
     }
     .padding()
-    .frame(minHeight: 460, maxHeight: showAdvancedSettings ? 650 : 460)
+    .frame(minHeight: 430, maxHeight: showAdvancedSettings ? 650 : 430)
   }
   
   private func sendPushNotification() {

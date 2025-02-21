@@ -48,6 +48,24 @@ struct ContentView: View {
                 TextField("Push Token e.g. ExponentPushToken[N1QHiEF4mnLGP8HeQrj9AR]", text: $tokens[index])
                   .textFieldStyle(RoundedBorderTextFieldStyle())
                 
+                Button(action: {
+                    if let clipboardString = NSPasteboard.general.string(forType: .string) {
+                        // Valid token length is 41 characters (ExponentPushToken[xxxxxxxxxxxxxxxxxxxxx])
+                        let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if trimmed.count <= 41 && trimmed.starts(with: "ExponentPushToken[") && trimmed.hasSuffix("]") {
+                            tokens[index] = trimmed
+                        } else {
+                            showAlert(title: "Invalid Token", 
+                                    message: "Token should be in format: ExponentPushToken[xxxxxxxxxxxxxxxxxxxxx]")
+                        }
+                    }
+                }) {
+                    Image(systemName: "doc.on.clipboard")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Paste from clipboard (ExponentPushToken[xxxxxxxxxxxxxxxxxxxxx])")
+                
                 if tokens.count > 1 {
                   Button(action: { tokens.remove(at: index) }) {
                     Image(systemName: "minus.circle.fill")

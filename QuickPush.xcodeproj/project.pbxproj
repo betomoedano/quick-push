@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CAF9CB4F2D6824C800E87790 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = CAF9CB4E2D6824C800E87790 /* LaunchAtLogin */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		CAF9CB2E2D67FE0400E87790 /* QuickPush.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickPush.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CAF9CB4F2D6824C800E87790 /* LaunchAtLogin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = QuickPush;
 			packageProductDependencies = (
+				CAF9CB4E2D6824C800E87790 /* LaunchAtLogin */,
 			);
 			productName = QuickPush;
 			productReference = CAF9CB2E2D67FE0400E87790 /* QuickPush.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = CAF9CB252D67FE0400E87790;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CAF9CB4D2D6824C800E87790 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CAF9CB2F2D67FE0400E87790 /* Products */;
 			projectDirPath = "";
@@ -319,6 +328,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		CAF9CB4D2D6824C800E87790 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CAF9CB4E2D6824C800E87790 /* LaunchAtLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CAF9CB4D2D6824C800E87790 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
+			productName = LaunchAtLogin;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CAF9CB262D67FE0400E87790 /* Project object */;
 }

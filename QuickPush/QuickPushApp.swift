@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct QuickPushApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+  var body: some Scene {
+    MenuBarExtra("QuickPush", systemImage: "bell") {
+      ContentView()
+        .frame(minWidth: 400)
     }
+    .menuBarExtraStyle(.window)
+  }
 }

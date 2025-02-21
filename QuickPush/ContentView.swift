@@ -16,6 +16,7 @@ struct ContentView: View {
   @State private var ttl: String = ""
   @State private var expiration: String = ""
   @State private var data: [String: String] = [:]
+  @State private var showTitleError: Bool = false
   
   // New state variables for advanced fields
   @State private var showAdvancedSettings: Bool = false
@@ -96,7 +97,7 @@ struct ContentView: View {
             
             // Basic Notification Fields
             VStack(alignment: .leading, spacing: 8) {
-              InputField(label: "Title", text: $title, helpText: "Title of the notification")
+              InputField(label: "Title", text: $title, helpText: "Title of the notification", isRequired: true, showError: showTitleError)
               InputField(label: "Body", text: $notificationBody, helpText: "Message content displayed in the notification")
               
               // Priority Picker
@@ -197,9 +198,12 @@ struct ContentView: View {
     let validTokens = tokens.filter { !$0.isEmpty }
     
     guard !validTokens.isEmpty, !title.isEmpty else {
+      showTitleError = title.isEmpty
       print("Error: Missing required fields")
       return
     }
+    
+    showTitleError = false
     
     let notification = PushNotification(
       to: validTokens,
@@ -249,12 +253,18 @@ struct InputField: View {
   let label: String
   @Binding var text: String
   let helpText: String
+  var isRequired: Bool = false
+  var showError: Bool = false
   
   var body: some View {
     HStack {
       Text("\(label):")
       TextField(label, text: $text)
         .textFieldStyle(RoundedBorderTextFieldStyle())
+        .overlay(
+          RoundedRectangle(cornerRadius: 6)
+            .stroke(showError ? Color.red : Color.clear, lineWidth: 1)
+        )
       HelpButton(helpText: helpText)
     }
   }

@@ -15,6 +15,7 @@ struct ContentView: View {
   @State private var priority: PushNotification.Priority = .default
   @State private var ttl: String = ""
   @State private var expiration: String = ""
+  @State private var data: [String: String] = [:]
   
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
@@ -77,6 +78,10 @@ struct ContentView: View {
         InputField(label: "Expiration", text: $expiration, helpText: "Unix timestamp for expiration (optional)")
       }
       
+      Divider()
+      
+      KeyValueInputView(data: $data)
+      
       // Send Button
       Button("Send Push") {
         sendPushNotification()
@@ -100,6 +105,7 @@ struct ContentView: View {
       to: validTokens,
       title: title,
       body: notificationBody.isEmpty ? " " : notificationBody,
+      data: data.isEmpty ? nil : data,
       ttl: Int(ttl),
       expiration: Int(expiration),
       priority: priority,

@@ -29,10 +29,17 @@ struct ContentView: View {
   
   var body: some View {
     VStack(spacing: 16) {
-      // Title
-      Text("QuickPush")
-        .font(.headline)
-        .frame(maxWidth: .infinity, alignment: .leading)
+      // Title and Send Button
+      HStack {
+        Text("QuickPush")
+          .font(.headline)
+        Spacer()
+        Button("Send Push") {
+          sendPushNotification()
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(tokens.filter { !$0.isEmpty }.isEmpty) // Disable if no valid tokens
+      }
       
       // Main Content
       ScrollView(.vertical, showsIndicators: false) {
@@ -118,9 +125,8 @@ struct ContentView: View {
               Spacer()
               Image(systemName: showAdvancedSettings ? "chevron.up" : "chevron.down")
             }
-            .foregroundColor(.primary)
           }
-          .buttonStyle(.plain)
+          .buttonStyle(.borderless)
           
           if showAdvancedSettings {
             VStack(alignment: .leading, spacing: 12) {
@@ -182,16 +188,9 @@ struct ContentView: View {
           }
         }
       }
-      
-      // Send Button
-      Button("Send Push") {
-        sendPushNotification()
-      }
-      .buttonStyle(.borderedProminent)
-      .frame(maxWidth: .infinity)
     }
     .padding()
-    .frame(minHeight: 430, maxHeight: showAdvancedSettings ? 650 : 430)
+    .frame(minHeight: 410, maxHeight: showAdvancedSettings ? 650 : 410)
   }
   
   private func sendPushNotification() {

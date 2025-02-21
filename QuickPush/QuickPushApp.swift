@@ -15,7 +15,7 @@ struct QuickPushApp: App {
       VStack {
         ContentView()
         Divider()
-        VStack {
+        VStack(spacing: 8) {
           HStack {
             LaunchAtLogin.Toggle()
             Spacer()

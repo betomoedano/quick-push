@@ -17,80 +17,163 @@ struct ContentView: View {
   @State private var expiration: String = ""
   @State private var data: [String: String] = [:]
   
+  // New state variables for advanced fields
+  @State private var showAdvancedSettings: Bool = false
+  @State private var subtitle: String = ""
+  @State private var badge: String = ""
+  @State private var interruptionLevel: PushNotification.InterruptionLevel = .active
+  @State private var channelId: String = ""
+  @State private var categoryId: String = ""
+  @State private var mutableContent: Bool = false
+  @State private var contentAvailable: Bool = false
+  
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text("Expo Push Notification")
+    VStack(spacing: 16) {
+      // Title
+      Text("QuickPush")
         .font(.headline)
+        .frame(maxWidth: .infinity, alignment: .leading)
       
-      // Tokens Section
-      Text("Expo Push Tokens:")
-        .font(.subheadline)
-      
-      ForEach(tokens.indices, id: \.self) { index in
-        HStack {
-          TextField("Push Token e.g. ExponentPushToken[N1QHiEF4mnLGP8HeQrj9AR]", text: $tokens[index])
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-          
-          if tokens.count > 1 {
-            Button(action: { tokens.remove(at: index) }) {
-              Image(systemName: "minus.circle.fill")
-                .foregroundColor(.red)
+      // Main Content
+      ScrollView(.vertical, showsIndicators: false) {
+        VStack(alignment: .leading, spacing: 16) {
+          // Basic Fields Section
+          VStack(alignment: .leading, spacing: 12) {
+            // Tokens Section
+            Text("Expo Push Tokens:")
+              .font(.subheadline)
+            
+            ForEach(tokens.indices, id: \.self) { index in
+              HStack {
+                TextField("Push Token e.g. ExponentPushToken[N1QHiEF4mnLGP8HeQrj9AR]", text: $tokens[index])
+                  .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                if tokens.count > 1 {
+                  Button(action: { tokens.remove(at: index) }) {
+                    Image(systemName: "minus.circle.fill")
+                      .foregroundColor(.red)
+                  }
+                  .buttonStyle(PlainButtonStyle())
+                }
+              }
             }
-            .buttonStyle(PlainButtonStyle())
+            
+            Button(action: { tokens.append("") }) {
+              HStack {
+                Image(systemName: "plus.circle.fill")
+                Text("Add Token")
+              }
+            }
+            .buttonStyle(.borderless)
+            .padding(.top, 5)
+            
+            Divider()
+            
+            // Basic Notification Fields
+            VStack(alignment: .leading, spacing: 8) {
+              InputField(label: "Title", text: $title, helpText: "Title of the notification")
+              InputField(label: "Body", text: $notificationBody, helpText: "Message content displayed in the notification")
+              
+              // Priority Picker
+              HStack {
+                Text("Priority:")
+                Picker("", selection: $priority) {
+                  Text("Default").tag(PushNotification.Priority.default)
+                  Text("Normal").tag(PushNotification.Priority.normal)
+                  Text("High").tag(PushNotification.Priority.high)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                
+                HelpButton(helpText: "Affects delivery timing. 'High' wakes sleeping devices.")
+              }
+              
+              Divider()
+              KeyValueInputView(data: $data)
+            }
           }
-        }
-      }
-      
-      Button(action: { tokens.append("") }) {
-        HStack {
-          Image(systemName: "plus.circle.fill")
-          Text("Add Token")
-        }
-      }
-      .buttonStyle(.borderless)
-      .padding(.top, 5)
-      
-      Divider()
-      
-      // Notification Fields
-      VStack(alignment: .leading, spacing: 8) {
-        InputField(label: "Title", text: $title, helpText: "Title of the notification")
-        InputField(label: "Body", text: $notificationBody, helpText: "Message content displayed in the notification")
-        InputField(label: "Sound (iOS)", text: $sound, helpText: "Specify 'default' or custom sound name (iOS only)")
-        
-        // Priority Picker
-        HStack {
-          Text("Priority:")
-          Picker("", selection: $priority) {
-            Text("Default").tag(PushNotification.Priority.default)
-            Text("Normal").tag(PushNotification.Priority.normal)
-            Text("High").tag(PushNotification.Priority.high)
-          }
-          .pickerStyle(SegmentedPickerStyle())
           
-          HelpButton(helpText: "Affects delivery timing. 'High' wakes sleeping devices.")
+          // Advanced Settings Toggle
+          Button(action: { showAdvancedSettings.toggle() }) {
+            HStack {
+              Text("Advanced Settings")
+                .font(.subheadline)
+              Spacer()
+              Image(systemName: showAdvancedSettings ? "chevron.up" : "chevron.down")
+            }
+            .foregroundColor(.primary)
+          }
+          .buttonStyle(.plain)
+          
+          if showAdvancedSettings {
+            VStack(alignment: .leading, spacing: 12) {
+              // iOS Specific Settings
+              Group {
+                Text("iOS Specific")
+                  .font(.subheadline)
+                  .foregroundColor(.secondary)
+                
+                InputField(label: "Sound", text: $sound, helpText: "Specify 'default' or custom sound name (iOS only)")
+                InputField(label: "Subtitle", text: $subtitle, helpText: "Additional text below the title (iOS only)")
+                InputField(label: "Badge", text: $badge, helpText: "Number to display on app icon (iOS only)")
+                
+                // Interruption Level Picker
+                HStack {
+                  Text("Interruption Level:")
+                  Picker("", selection: $interruptionLevel) {
+                    Text("Active").tag(PushNotification.InterruptionLevel.active)
+                    Text("Critical").tag(PushNotification.InterruptionLevel.critical)
+                    Text("Passive").tag(PushNotification.InterruptionLevel.passive)
+                    Text("Time Sensitive").tag(PushNotification.InterruptionLevel.timeSensitive)
+                  }
+                  .pickerStyle(MenuPickerStyle())
+                  
+                  HelpButton(helpText: "Controls the delivery timing and importance of the notification")
+                }
+                
+                Toggle("Mutable Content", isOn: $mutableContent)
+                  .help("Allows notification content modification by the app")
+                
+                Toggle("Content Available", isOn: $contentAvailable)
+                  .help("Triggers background fetch on delivery")
+              }
+              
+              Divider()
+              
+              // Android Specific Settings
+              Group {
+                Text("Android Specific")
+                  .font(.subheadline)
+                  .foregroundColor(.secondary)
+                
+                InputField(label: "Channel ID", text: $channelId, helpText: "Android notification channel identifier")
+              }
+              
+              Divider()
+              
+              // Common Advanced Settings
+              Group {
+                Text("Common Settings")
+                  .font(.subheadline)
+                  .foregroundColor(.secondary)
+                
+                InputField(label: "Category ID", text: $categoryId, helpText: "Notification category for interactive notifications")
+                InputField(label: "TTL", text: $ttl, helpText: "Time-to-live in seconds")
+                InputField(label: "Expiration", text: $expiration, helpText: "Unix timestamp for expiration")
+              }
+            }
+          }
         }
-        
-        // TTL Input
-        InputField(label: "TTL", text: $ttl, helpText: "Time-to-live in seconds (leave blank for default)")
-        
-        // Expiration Input
-        InputField(label: "Expiration", text: $expiration, helpText: "Unix timestamp for expiration (optional)")
       }
-      
-      Divider()
-      
-      KeyValueInputView(data: $data)
       
       // Send Button
       Button("Send Push") {
         sendPushNotification()
       }
       .buttonStyle(.borderedProminent)
-      .padding(.top, 10)
+      .frame(maxWidth: .infinity)
     }
     .padding()
-    .frame(width: 350)
+    .frame(minHeight: 460, maxHeight: showAdvancedSettings ? 650 : 460)
   }
   
   private func sendPushNotification() {
@@ -109,7 +192,14 @@ struct ContentView: View {
       ttl: Int(ttl),
       expiration: Int(expiration),
       priority: priority,
-      sound: sound.isEmpty ? nil : sound
+      subtitle: subtitle.isEmpty ? nil : subtitle,
+      sound: sound.isEmpty ? nil : sound,
+      badge: Int(badge),
+      interruptionLevel: interruptionLevel,
+      channelId: channelId.isEmpty ? nil : channelId,
+      categoryId: categoryId.isEmpty ? nil : categoryId,
+      mutableContent: mutableContent,
+      contentAvailable: contentAvailable
     )
     
     PushNotificationService.shared.sendPushNotification(notification: notification) { result in
@@ -161,7 +251,7 @@ struct HelpButton: View {
   var body: some View {
     Button(action: { showHelp.toggle() }) {
       Image(systemName: "questionmark.circle")
-        .foregroundColor(.blue)
+        .foregroundColor(.secondary)
     }
     .popover(isPresented: $showHelp) {
       Text(helpText)

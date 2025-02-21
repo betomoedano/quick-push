@@ -12,12 +12,23 @@ struct KeyValueInputView: View {
     @State private var editingKeys: [String: String] = [:] // Temporary key storage
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text("Custom Data (JSON)")
-                .font(.subheadline)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Custom Data:")
+                    .font(.subheadline)
+                HelpButton(helpText: "Add custom JSON data to be sent with the notification. Up to 4KB total payload size.")
+            }
+            
+            if data.isEmpty {
+                Text("No custom data")
+                    .foregroundColor(.secondary)
+                    .font(.subheadline)
+                    .padding(.vertical, 4)
+            }
             
             ForEach(Array(data.keys), id: \.self) { key in
-                HStack {
+                HStack(spacing: 8) {
+                    // Key Input
                     TextField("Key", text: Binding(
                         get: { editingKeys[key] ?? key },
                         set: { newKey in
@@ -32,30 +43,38 @@ struct KeyValueInputView: View {
                     }
 
                     Text(":")
+                        .foregroundColor(.secondary)
                     
+                    // Value Input
                     TextField("Value", text: Binding(
                         get: { data[key] ?? "" },
                         set: { newValue in data[key] = newValue }
                     ))
                     .textFieldStyle(RoundedBorderTextFieldStyle())
 
+                    // Remove Button
                     Button(action: { removeKey(key) }) {
                         Image(systemName: "minus.circle.fill")
                             .foregroundColor(.red)
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .help("Remove this key-value pair")
                 }
             }
             
+            // Add Button
             Button(action: { addNewKeyValue() }) {
                 HStack {
                     Image(systemName: "plus.circle.fill")
-                    Text("Add Key-Value")
+                    Text("Add Key-Value Pair")
                 }
             }
             .buttonStyle(.borderless)
-            .padding(.top, 5)
+            .disabled(data.count >= 10) // Prevent too many items
+            .help(data.count >= 10 ? "Maximum number of custom data pairs reached" : "Add a new key-value pair")
+            .padding(.top, 4)
         }
+        .padding(.vertical, 4)
     }
     
     // MARK: - Helper Functions
@@ -85,12 +104,14 @@ struct KeyValueInputView: View {
 
     /// Adds a new key-value pair with a default key
     private func addNewKeyValue() {
-        let baseKey = "new-key"
+        guard data.count < 10 else { return } // Safety check
+        
+        let baseKey = "key"
         var newKey = baseKey
         var counter = 1
 
         while data.keys.contains(newKey) {
-            newKey = "\(baseKey)-\(counter)"
+            newKey = "\(baseKey)\(counter)"
             counter += 1
         }
 

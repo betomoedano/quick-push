@@ -12,15 +12,16 @@
 
 - Send test push notifications to your Expo apps directly from the menu bar
 - Simple and intuitive interface for quick testing
-- Support for both development and production push notifications
 - Easy configuration of notification payload and options
-- Instant feedback on notification delivery status
+- Advanced push notification features available
+- Platform specific settings available
+- Instant feedback on notification delivery status (coming soon)
 
 Try out QuickPush now, explore its capabilities, and share your feedback. Your input will shape the future of this tool and guide us on where to take it next.
 
 ## 🛠️ Installation
 
-You can download the latest version of QuickPush for macOS from [quickpush/releases](https://github.com/expo/quickpush/releases) page.
+You can download the latest version of QuickPush for macOS from [quickpush/releases](https://github.com/betomoedano/quick-push/releases) page.
 
 ### macOS
 

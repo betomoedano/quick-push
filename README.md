@@ -28,7 +28,3 @@ You can download the latest version of QuickPush for macOS from [quickpush/relea
 3. Drag and drop the QuickPush app to your Applications folder
 4. Open QuickPush from your Applications folder
 5. The QuickPush icon will appear in your menu bar
-
-### macOS
-
-On macOS you can also install QuickPush via Homebrew:

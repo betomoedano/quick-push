@@ -30,3 +30,7 @@ You can download the latest version of QuickPush for macOS from [quickpush/relea
 5. The QuickPush icon will appear in your menu bar
 
 ## 📸 Screenshots
+
+<img width="504" alt="Screenshot 2025-02-22 at 7 08 40 PM" src="https://github.com/user-attachments/assets/d5900db9-1f88-4dd8-b33a-3f5873c4c3b7" />
+
+<img width="495" alt="Screenshot 2025-02-22 at 7 08 33 PM" src="https://github.com/user-attachments/assets/bda2d077-0b77-432e-aa8f-10db145b4751" />

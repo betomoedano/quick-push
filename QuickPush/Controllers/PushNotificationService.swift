@@ -56,6 +56,14 @@ class PushNotificationService {
       // Decode API response
       do {
         let responseObject = try JSONDecoder().decode(PushResponse.self, from: data)
+        
+        // UNAUTHORIZED REQUESTS CHECK - Possibly no Access Token
+        if let errors = responseObject.errors,
+           errors.contains(where: { $0.code == "UNAUTHORIZED" }) {
+          completion(.failure(APIError.insufficientPermissions))
+          return
+        }
+        
         completion(.success(responseObject))
       } catch {
         completion(.failure(APIError.decodingFailed))
@@ -70,6 +78,7 @@ enum APIError: Error, LocalizedError {
   case encodingFailed
   case noData
   case decodingFailed
+  case insufficientPermissions
   
   var errorDescription: String? {
     switch self {
@@ -77,6 +86,7 @@ enum APIError: Error, LocalizedError {
     case .encodingFailed: return "Failed to encode request data"
     case .noData: return "No response data received"
     case .decodingFailed: return "Failed to decode API response"
+    case .insufficientPermissions: return "Insufficient permissions. Push security may be enabled for this app - please provide a valid access token above."
     }
   }
 }

@@ -12,7 +12,7 @@ class PushNotificationService {
   
   private let expoPushEndpoint = "https://exp.host/--/api/v2/push/send"
   
-  func sendPushNotification(notification: PushNotification, completion: @escaping (Result<PushResponse, Error>) -> Void) {
+  func sendPushNotification(notification: PushNotification, accessToken: String? = nil, completion: @escaping (Result<PushResponse, Error>) -> Void) {
     guard let url = URL(string: expoPushEndpoint) else {
       completion(.failure(APIError.invalidURL))
       return
@@ -25,6 +25,11 @@ class PushNotificationService {
     request.setValue("application/json", forHTTPHeaderField: "accept")
     request.setValue("gzip, deflate", forHTTPHeaderField: "accept-encoding")
     request.setValue("application/json", forHTTPHeaderField: "content-type")
+    
+    // Add authorization header if access token is provided
+    if let accessToken = accessToken, !accessToken.isEmpty {
+      request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+    }
     
     do {
       let jsonData = try JSONEncoder().encode(notification)

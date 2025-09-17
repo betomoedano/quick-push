@@ -21,5 +21,14 @@ struct PushResponse: Codable {
   struct PushError: Codable {
     let code: String
     let message: String
+    let type: String?
+    let isTransient: Bool?
+    let metadata: ErrorMetadata?
+    let requestId: String?
+    
+    struct ErrorMetadata: Codable {
+      let appId: String?
+      let experienceId: String?
+    }
   }
 }

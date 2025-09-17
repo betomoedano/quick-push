@@ -12,7 +12,7 @@ class PushNotificationService {
   
   private let expoPushEndpoint = "https://exp.host/--/api/v2/push/send"
   
-  func sendPushNotification(notification: PushNotification, completion: @escaping (Result<PushResponse, Error>) -> Void) {
+  func sendPushNotification(notification: PushNotification, accessToken: String? = nil, completion: @escaping (Result<PushResponse, Error>) -> Void) {
     guard let url = URL(string: expoPushEndpoint) else {
       completion(.failure(APIError.invalidURL))
       return
@@ -25,6 +25,11 @@ class PushNotificationService {
     request.setValue("application/json", forHTTPHeaderField: "accept")
     request.setValue("gzip, deflate", forHTTPHeaderField: "accept-encoding")
     request.setValue("application/json", forHTTPHeaderField: "content-type")
+    
+    // Add authorization header if access token is provided
+    if let accessToken = accessToken, !accessToken.isEmpty {
+      request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+    }
     
     do {
       let jsonData = try JSONEncoder().encode(notification)
@@ -51,6 +56,14 @@ class PushNotificationService {
       // Decode API response
       do {
         let responseObject = try JSONDecoder().decode(PushResponse.self, from: data)
+        
+        // UNAUTHORIZED REQUESTS CHECK - Possibly no Access Token
+        if let errors = responseObject.errors,
+           errors.contains(where: { $0.code == "UNAUTHORIZED" }) {
+          completion(.failure(APIError.insufficientPermissions))
+          return
+        }
+        
         completion(.success(responseObject))
       } catch {
         completion(.failure(APIError.decodingFailed))
@@ -65,6 +78,7 @@ enum APIError: Error, LocalizedError {
   case encodingFailed
   case noData
   case decodingFailed
+  case insufficientPermissions
   
   var errorDescription: String? {
     switch self {
@@ -72,6 +86,7 @@ enum APIError: Error, LocalizedError {
     case .encodingFailed: return "Failed to encode request data"
     case .noData: return "No response data received"
     case .decodingFailed: return "Failed to decode API response"
+    case .insufficientPermissions: return "Insufficient permissions. Push security may be enabled for this app - please provide a valid access token above."
     }
   }
 }

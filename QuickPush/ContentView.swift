@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
   @State private var tokens: [String] = [""]
+  @State private var accessToken: String = ""
   @State private var title: String = ""
   @State private var notificationBody: String = ""
   @State private var sound: String = "default"
@@ -96,6 +97,32 @@ struct ContentView: View {
             }
             .buttonStyle(.borderless)
             .padding(.top, 5)
+            
+            // Access Token Section
+            VStack(alignment: .leading, spacing: 8) {
+              HStack {
+                Text("Access Token (Optional):")
+                  .font(.subheadline)
+                HelpButton(helpText: "Enhanced push security token. Required if you've enabled push security in your EAS Dashboard.")
+              }
+              
+              HStack {
+                SecureField("Access token for enhanced security", text: $accessToken)
+                  .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                Button(action: {
+                    if let clipboardString = NSPasteboard.general.string(forType: .string) {
+                        let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+                        accessToken = trimmed
+                    }
+                }) {
+                    Image(systemName: "doc.on.clipboard")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Paste access token from clipboard")
+              }
+            }
             
             Divider()
             
@@ -233,7 +260,10 @@ struct ContentView: View {
       contentAvailable: contentAvailable
     )
     
-    PushNotificationService.shared.sendPushNotification(notification: notification) { result in
+    PushNotificationService.shared.sendPushNotification(
+      notification: notification,
+      accessToken: accessToken.isEmpty ? nil : accessToken
+    ) { result in
       DispatchQueue.main.async {
         switch result {
         case .success(let response):

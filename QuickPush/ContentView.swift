@@ -28,6 +28,7 @@ struct ContentView: View {
   @State private var categoryId: String = ""
   @State private var mutableContent: Bool = false
   @State private var contentAvailable: Bool = false
+  @State private var imageUrl: String = ""
   
   // Toast notification state
   @State private var showToast: Bool = false
@@ -211,7 +212,8 @@ struct ContentView: View {
                 Text("Common Settings")
                   .font(.subheadline)
                   .foregroundColor(.secondary)
-                
+
+                InputField(label: "Image (richContent)", text: $imageUrl, helpText: "URL of image to display in rich notification. Android will show the image out of the box. On iOS, you need to add a Notification Service Extension target to your app. See https://github.com/expo/expo/pull/36202 for an example.")
                 InputField(label: "Category ID", text: $categoryId, helpText: "Notification category for interactive notifications")
                 InputField(label: "TTL", text: $ttl, helpText: "Time-to-live in seconds")
                 InputField(label: "Expiration", text: $expiration, helpText: "Unix timestamp for expiration")
@@ -242,6 +244,8 @@ struct ContentView: View {
     
     showTitleError = false
     
+    let richContent: PushNotification.RichContent? = imageUrl.isEmpty ? nil : PushNotification.RichContent(image: imageUrl)
+
     let notification = PushNotification(
       to: validTokens,
       title: title,
@@ -257,7 +261,8 @@ struct ContentView: View {
       channelId: channelId.isEmpty ? nil : channelId,
       categoryId: categoryId.isEmpty ? nil : categoryId,
       mutableContent: mutableContent,
-      contentAvailable: contentAvailable
+      contentAvailable: contentAvailable,
+      richContent: richContent
     )
     
     PushNotificationService.shared.sendPushNotification(
@@ -360,18 +365,40 @@ struct InputField: View {
 struct HelpButton: View {
   let helpText: String
   @State private var showHelp = false
-  
+
   var body: some View {
     Button(action: { showHelp.toggle() }) {
       Image(systemName: "questionmark.circle")
         .foregroundColor(.secondary)
     }
     .popover(isPresented: $showHelp) {
-      Text(helpText)
-        .padding()
-        .frame(width: 250)
+      VStack(alignment: .leading, spacing: 8) {
+        Text(attributedHelpText)
+          .textSelection(.enabled)
+      }
+      .padding()
+      .frame(width: 300)
     }
     .buttonStyle(PlainButtonStyle())
+  }
+
+  private var attributedHelpText: AttributedString {
+    // Check if the help text contains a URL
+    if let urlRange = helpText.range(of: "https://[^\\s]+", options: .regularExpression),
+       let url = URL(string: String(helpText[urlRange])) {
+      var attributedString = AttributedString(helpText)
+
+      // Find the range in the AttributedString
+      if let range = attributedString.range(of: String(helpText[urlRange])) {
+        attributedString[range].link = url
+        attributedString[range].foregroundColor = .blue
+        attributedString[range].underlineStyle = .single
+      }
+
+      return attributedString
+    }
+
+    return AttributedString(helpText)
   }
 }
 #Preview {

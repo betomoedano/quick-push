@@ -22,8 +22,6 @@ class LiveActivityViewModel {
   var progress: Double = 0.5
   var includeTimerEnd: Bool = false
   var timerEndDate: Date = Date().addingTimeInterval(3600)
-  var includeElapsedTimer: Bool = false
-  var elapsedTimerStartDate: Date = Date()
   var imageName: String = ""
   var dynamicIslandImageName: String = ""
 
@@ -32,18 +30,19 @@ class LiveActivityViewModel {
   var backgroundColor: Color = Color(hex: "001A72")
   var titleColor: Color = Color(hex: "EBEBF0")
   var subtitleColor: Color = Color(hex: "EBEBF599")
-  var progressTintColor: Color = Color(hex: "FFFFFF")
-  var progressLabelColor: Color = Color(hex: "EBEBF0")
-  var deepLinkURL: String = ""
+  var progressViewTint: Color = Color(hex: "FFFFFF")
+  var progressViewLabelColor: Color = Color(hex: "EBEBF0")
+  var deepLinkUrl: String = ""
   var timerType: String = "digital"
   var imagePosition: String = "left"
-  var imageWidth: Double = 40
-  var imageHeight: Double = 40
+  var imageWidth: Int = 40
+  var imageHeight: Int = 40
   var useCustomPadding: Bool = false
   var uniformPadding: Int = 16
-  var paddingHorizontal: Int = 20
   var paddingTop: Int = 16
   var paddingBottom: Int = 16
+  var paddingLeft: Int = 16
+  var paddingRight: Int = 16
 
   // MARK: - Alert (Start only)
   var includeAlert: Bool = false
@@ -109,43 +108,42 @@ class LiveActivityViewModel {
   // MARK: - Build Payload
   func buildPayload() -> LiveActivityAPNsPayload {
     let contentState = LiveActivityContentState(
-      title: contentTitle.isEmpty ? nil : contentTitle,
+      title: contentTitle.isEmpty ? "Activity" : contentTitle,
       subtitle: contentSubtitle.isEmpty ? nil : contentSubtitle,
+      timerEndDateInMilliseconds: includeTimerEnd ? timerEndDate.timeIntervalSince1970 * 1000 : nil,
       progress: includeProgress ? progress : nil,
-      timerEndDateInMilliseconds: includeTimerEnd ? Int(timerEndDate.timeIntervalSince1970 * 1000) : nil,
-      elapsedTimerStartDateInMilliseconds: includeElapsedTimer ? Int(elapsedTimerStartDate.timeIntervalSince1970 * 1000) : nil,
       imageName: imageName.isEmpty ? nil : imageName,
       dynamicIslandImageName: dynamicIslandImageName.isEmpty ? nil : dynamicIslandImageName
     )
 
     var attributes: LiveActivityAttributes?
     if eventType == .start {
-      let padding: LiveActivityPadding?
+      let paddingDetails: LiveActivityPaddingDetails?
       if useCustomPadding {
-        padding = .custom(horizontal: paddingHorizontal, top: paddingTop, bottom: paddingBottom)
+        paddingDetails = LiveActivityPaddingDetails(
+          top: paddingTop,
+          bottom: paddingBottom,
+          left: paddingLeft,
+          right: paddingRight
+        )
       } else {
-        padding = .uniform(uniformPadding)
-      }
-
-      let imgSize: LiveActivityImageSize?
-      if !imageName.isEmpty || !dynamicIslandImageName.isEmpty {
-        imgSize = LiveActivityImageSize(width: imageWidth, height: imageHeight)
-      } else {
-        imgSize = nil
+        paddingDetails = nil
       }
 
       attributes = LiveActivityAttributes(
-        name: attributeName.isEmpty ? nil : attributeName,
+        name: attributeName.isEmpty ? "LiveActivity" : attributeName,
         backgroundColor: backgroundColor.toHexString(),
         titleColor: titleColor.toHexString(),
         subtitleColor: subtitleColor.toHexStringWithAlpha(),
-        progressTintColor: progressTintColor.toHexString(),
-        progressLabelColor: progressLabelColor.toHexString(),
-        deepLinkURL: deepLinkURL.isEmpty ? nil : deepLinkURL,
+        progressViewTint: progressViewTint.toHexString(),
+        progressViewLabelColor: progressViewLabelColor.toHexString(),
+        deepLinkUrl: deepLinkUrl.isEmpty ? nil : deepLinkUrl,
         timerType: timerType,
+        padding: useCustomPadding ? nil : uniformPadding,
+        paddingDetails: paddingDetails,
         imagePosition: imagePosition,
-        imageSize: imgSize,
-        padding: padding
+        imageWidth: (!imageName.isEmpty || !dynamicIslandImageName.isEmpty) ? imageWidth : nil,
+        imageHeight: (!imageName.isEmpty || !dynamicIslandImageName.isEmpty) ? imageHeight : nil
       )
     }
 
@@ -159,7 +157,7 @@ class LiveActivityViewModel {
     }
 
     let aps = LiveActivityAPS(
-      timestamp: Int(Date().timeIntervalSince1970 * 1000),
+      timestamp: Int(Date().timeIntervalSince1970),
       event: eventType,
       contentState: contentState,
       attributesType: eventType == .start ? "ExpoLiveActivityAttributes" : nil,
@@ -230,7 +228,7 @@ class LiveActivityViewModel {
 
     // Content State
     let cs = aps.contentState
-    contentTitle = cs.title ?? ""
+    contentTitle = cs.title
     contentSubtitle = cs.subtitle ?? ""
     if let p = cs.progress {
       includeProgress = true
@@ -240,45 +238,36 @@ class LiveActivityViewModel {
     }
     if let timerEnd = cs.timerEndDateInMilliseconds {
       includeTimerEnd = true
-      timerEndDate = Date(timeIntervalSince1970: Double(timerEnd) / 1000)
+      timerEndDate = Date(timeIntervalSince1970: timerEnd / 1000)
     } else {
       includeTimerEnd = false
-    }
-    if let elapsed = cs.elapsedTimerStartDateInMilliseconds {
-      includeElapsedTimer = true
-      elapsedTimerStartDate = Date(timeIntervalSince1970: Double(elapsed) / 1000)
-    } else {
-      includeElapsedTimer = false
     }
     imageName = cs.imageName ?? ""
     dynamicIslandImageName = cs.dynamicIslandImageName ?? ""
 
     // Attributes
     if let attrs = aps.attributes {
-      attributeName = attrs.name ?? ""
+      attributeName = attrs.name
       if let bg = attrs.backgroundColor { backgroundColor = Color(hex: bg) }
       if let tc = attrs.titleColor { titleColor = Color(hex: tc) }
       if let sc = attrs.subtitleColor { subtitleColor = Color(hex: sc) }
-      if let pt = attrs.progressTintColor { progressTintColor = Color(hex: pt) }
-      if let pl = attrs.progressLabelColor { progressLabelColor = Color(hex: pl) }
-      deepLinkURL = attrs.deepLinkURL ?? ""
+      if let pt = attrs.progressViewTint { progressViewTint = Color(hex: pt) }
+      if let pl = attrs.progressViewLabelColor { progressViewLabelColor = Color(hex: pl) }
+      deepLinkUrl = attrs.deepLinkUrl ?? ""
       timerType = attrs.timerType ?? "digital"
       imagePosition = attrs.imagePosition ?? "left"
-      if let size = attrs.imageSize {
-        imageWidth = size.width
-        imageHeight = size.height
+      if let w = attrs.imageWidth { imageWidth = w }
+      if let h = attrs.imageHeight { imageHeight = h }
+      if let p = attrs.padding {
+        useCustomPadding = false
+        uniformPadding = p
       }
-      if let padding = attrs.padding {
-        switch padding {
-        case .uniform(let value):
-          useCustomPadding = false
-          uniformPadding = value
-        case .custom(let h, let t, let b):
-          useCustomPadding = true
-          paddingHorizontal = h
-          paddingTop = t
-          paddingBottom = b
-        }
+      if let pd = attrs.paddingDetails {
+        useCustomPadding = true
+        paddingTop = pd.top ?? 16
+        paddingBottom = pd.bottom ?? 16
+        paddingLeft = pd.left ?? 16
+        paddingRight = pd.right ?? 16
       }
     }
 

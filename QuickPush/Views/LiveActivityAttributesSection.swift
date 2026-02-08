@@ -26,12 +26,12 @@ struct LiveActivityAttributesSection: View {
       ColorPickerField(label: "Background", color: $viewModel.backgroundColor)
       ColorPickerField(label: "Title Color", color: $viewModel.titleColor)
       ColorPickerField(label: "Subtitle Color", color: $viewModel.subtitleColor)
-      ColorPickerField(label: "Progress Tint", color: $viewModel.progressTintColor)
-      ColorPickerField(label: "Progress Label", color: $viewModel.progressLabelColor)
+      ColorPickerField(label: "Progress Tint", color: $viewModel.progressViewTint)
+      ColorPickerField(label: "Progress Label", color: $viewModel.progressViewLabelColor)
 
       HStack {
         Text("Deep Link URL:")
-        TextField("e.g. myapp://activity", text: $viewModel.deepLinkURL)
+        TextField("e.g. /dashboard", text: $viewModel.deepLinkUrl)
           .textFieldStyle(.roundedBorder)
       }
 
@@ -40,7 +40,7 @@ struct LiveActivityAttributesSection: View {
         Text("Timer Type:")
         Picker("", selection: $viewModel.timerType) {
           Text("Digital").tag("digital")
-          Text("Analog").tag("analog")
+          Text("Circular").tag("circular")
         }
         .pickerStyle(.segmented)
       }
@@ -71,18 +71,22 @@ struct LiveActivityAttributesSection: View {
       Toggle("Custom Padding", isOn: $viewModel.useCustomPadding)
       if viewModel.useCustomPadding {
         HStack {
-          Text("H:")
-          TextField("", value: $viewModel.paddingHorizontal, format: .number)
-            .textFieldStyle(.roundedBorder)
-            .frame(width: 50)
           Text("T:")
           TextField("", value: $viewModel.paddingTop, format: .number)
             .textFieldStyle(.roundedBorder)
-            .frame(width: 50)
+            .frame(width: 45)
           Text("B:")
           TextField("", value: $viewModel.paddingBottom, format: .number)
             .textFieldStyle(.roundedBorder)
-            .frame(width: 50)
+            .frame(width: 45)
+          Text("L:")
+          TextField("", value: $viewModel.paddingLeft, format: .number)
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 45)
+          Text("R:")
+          TextField("", value: $viewModel.paddingRight, format: .number)
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 45)
         }
         .padding(.leading, 16)
       } else {

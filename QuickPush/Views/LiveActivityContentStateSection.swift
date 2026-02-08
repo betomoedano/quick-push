@@ -52,17 +52,6 @@ struct LiveActivityContentStateSection: View {
         .padding(.leading, 16)
       }
 
-      // Elapsed Timer
-      Toggle("Include Elapsed Timer", isOn: $viewModel.includeElapsedTimer)
-      if viewModel.includeElapsedTimer {
-        HStack {
-          Text("Start Date:")
-          DatePicker("", selection: $viewModel.elapsedTimerStartDate)
-            .labelsHidden()
-        }
-        .padding(.leading, 16)
-      }
-
       HStack {
         Text("Image Name:")
         TextField("Optional image name", text: $viewModel.imageName)

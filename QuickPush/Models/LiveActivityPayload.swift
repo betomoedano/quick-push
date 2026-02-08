@@ -43,69 +43,40 @@ enum LiveActivityEvent: String, Codable, CaseIterable {
   case end
 }
 
+// Matches ExpoLiveActivityAttributes.ContentState exactly
 struct LiveActivityContentState: Codable {
-  var title: String?
+  var title: String
   var subtitle: String?
+  var timerEndDateInMilliseconds: Double?
   var progress: Double?
-  var timerEndDateInMilliseconds: Int?
-  var elapsedTimerStartDateInMilliseconds: Int?
   var imageName: String?
   var dynamicIslandImageName: String?
 }
 
+// Matches ExpoLiveActivityAttributes exactly
 struct LiveActivityAttributes: Codable {
-  var name: String?
+  var name: String
   var backgroundColor: String?
   var titleColor: String?
   var subtitleColor: String?
-  var progressTintColor: String?
-  var progressLabelColor: String?
-  var deepLinkURL: String?
+  var progressViewTint: String?
+  var progressViewLabelColor: String?
+  var deepLinkUrl: String?
   var timerType: String?
+  var padding: Int?
+  var paddingDetails: LiveActivityPaddingDetails?
   var imagePosition: String?
-  var imageSize: LiveActivityImageSize?
-  var padding: LiveActivityPadding?
+  var imageWidth: Int?
+  var imageHeight: Int?
 }
 
-struct LiveActivityImageSize: Codable {
-  var width: Double
-  var height: Double
-}
-
-enum LiveActivityPadding: Codable {
-  case uniform(Int)
-  case custom(horizontal: Int, top: Int, bottom: Int)
-
-  enum CodingKeys: String, CodingKey {
-    case horizontal, top, bottom
-  }
-
-  init(from decoder: Decoder) throws {
-    if let container = try? decoder.singleValueContainer(),
-       let value = try? container.decode(Int.self) {
-      self = .uniform(value)
-      return
-    }
-
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    let horizontal = try container.decode(Int.self, forKey: .horizontal)
-    let top = try container.decode(Int.self, forKey: .top)
-    let bottom = try container.decode(Int.self, forKey: .bottom)
-    self = .custom(horizontal: horizontal, top: top, bottom: bottom)
-  }
-
-  func encode(to encoder: Encoder) throws {
-    switch self {
-    case .uniform(let value):
-      var container = encoder.singleValueContainer()
-      try container.encode(value)
-    case .custom(let horizontal, let top, let bottom):
-      var container = encoder.container(keyedBy: CodingKeys.self)
-      try container.encode(horizontal, forKey: .horizontal)
-      try container.encode(top, forKey: .top)
-      try container.encode(bottom, forKey: .bottom)
-    }
-  }
+struct LiveActivityPaddingDetails: Codable {
+  var top: Int?
+  var bottom: Int?
+  var left: Int?
+  var right: Int?
+  var vertical: Int?
+  var horizontal: Int?
 }
 
 struct LiveActivityAlert: Codable {

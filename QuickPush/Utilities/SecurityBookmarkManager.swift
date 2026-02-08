@@ -69,11 +69,13 @@ class SecurityBookmarkManager {
   }
 
   func readP8FileContents(from url: URL) -> String? {
-    guard url.startAccessingSecurityScopedResource() else {
-      return nil
+    let hasAccess = url.startAccessingSecurityScopedResource()
+    defer {
+      if hasAccess { url.stopAccessingSecurityScopedResource() }
     }
-    defer { url.stopAccessingSecurityScopedResource() }
 
+    // Try reading regardless — NSOpenPanel grants access during the session
+    // even if the security-scoped bookmark failed to save
     return try? String(contentsOf: url, encoding: .utf8)
   }
 }

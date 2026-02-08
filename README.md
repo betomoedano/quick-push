@@ -3,10 +3,10 @@
     <source height="96" media="(prefers-color-scheme: dark)" srcset="./.github/resources/icon-white.png">
     <img height="96" alt="QuickPush" src="./.github/resources/icon-dark.png">
   </picture>
-  <h1 align="center">QuickPush</h1>
+  <h1 align="center">QuickPush Tool</h1>
 </p>
 
-<p align="center">A lightweight macOS menu bar utility for quickly testing Expo push notifications</p>
+<p align="center">A lightweight macOS menu bar utility for quickly testing Expo push notifications and live activities (coming soon)</p>
 
 ### Features highlights
 

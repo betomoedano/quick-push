@@ -33,7 +33,7 @@ struct QuickPushApp: App {
         }
         .padding()
       }
-      .frame(minWidth: 400)
+      .frame(minWidth: 420)
     }
     .menuBarExtraStyle(.window)
   }

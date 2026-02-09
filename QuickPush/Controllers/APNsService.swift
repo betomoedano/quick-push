@@ -7,6 +7,47 @@
 
 import Foundation
 
+/// Full diagnostic info returned after every APNs request.
+struct APNsResponse {
+  let statusCode: Int
+  let reason: String?
+  let apnsId: String?
+  let apnsUniqueId: String?
+  let environment: APNsEnvironment
+  let topic: String
+  let timestamp: Int
+  let hostname: String
+  let attributesType: String?
+  let event: String
+
+  var isSuccess: Bool { statusCode == 200 }
+
+  /// Short summary shown in the toast.
+  var summary: String {
+    let envLabel = environment.rawValue.capitalized
+    if isSuccess {
+      return "200 OK (\(envLabel))"
+    } else {
+      return "\(statusCode): \(reason ?? "Unknown") (\(envLabel))"
+    }
+  }
+
+  /// Multi-line diagnostic block for the detail view.
+  var diagnosticDetails: String {
+    var lines: [String] = []
+    lines.append("Status:         \(statusCode) \(isSuccess ? "OK" : "Error")")
+    if let reason { lines.append("Reason:         \(reason)") }
+    lines.append("Environment:    \(environment.rawValue.capitalized) (\(hostname))")
+    lines.append("Topic:          \(topic)")
+    lines.append("Event:          \(event)")
+    if let attributesType { lines.append("Attributes Type: \(attributesType)") }
+    lines.append("Timestamp:      \(timestamp) (Unix seconds)")
+    if let apnsId { lines.append("apns-id:        \(apnsId)") }
+    if let apnsUniqueId { lines.append("apns-unique-id: \(apnsUniqueId)") }
+    return lines.joined(separator: "\n")
+  }
+}
+
 class APNsService {
   static let shared = APNsService()
 
@@ -17,7 +58,7 @@ class APNsService {
   enum APNsError: Error, LocalizedError {
     case invalidConfiguration
     case cannotReadP8File
-    case requestFailed(statusCode: Int, reason: String)
+    case requestFailed(response: APNsResponse)
     case networkError(String)
 
     var errorDescription: String? {
@@ -26,8 +67,8 @@ class APNsService {
         return "APNs configuration is incomplete. Please fill in all fields."
       case .cannotReadP8File:
         return "Cannot read .p8 key file. Please re-select the file."
-      case .requestFailed(let statusCode, let reason):
-        return "APNs error (\(statusCode)): \(reason)"
+      case .requestFailed(let response):
+        return "APNs error: \(response.summary)"
       case .networkError(let message):
         return "Network error: \(message)"
       }
@@ -38,7 +79,7 @@ class APNsService {
     payload: LiveActivityAPNsPayload,
     token: String,
     configuration: APNsConfiguration,
-    completion: @escaping (Result<String, Error>) -> Void
+    completion: @escaping (Result<APNsResponse, Error>) -> Void
   ) {
     guard configuration.isValid else {
       completion(.failure(APNsError.invalidConfiguration))
@@ -77,6 +118,8 @@ class APNsService {
     request.setValue("10", forHTTPHeaderField: "apns-priority")
     request.setValue("application/json", forHTTPHeaderField: "content-type")
 
+    let payloadTimestamp = payload.aps.timestamp
+
     do {
       let encoder = JSONEncoder()
       request.httpBody = try encoder.encode(payload)
@@ -96,16 +139,33 @@ class APNsService {
         return
       }
 
+      let apnsId = httpResponse.value(forHTTPHeaderField: "apns-id")
+      let apnsUniqueId = httpResponse.value(forHTTPHeaderField: "apns-unique-id")
+
+      var reason: String?
+      if let data = data,
+         let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+         let r = json["reason"] as? String {
+        reason = r
+      }
+
+      let apnsResponse = APNsResponse(
+        statusCode: httpResponse.statusCode,
+        reason: reason,
+        apnsId: apnsId,
+        apnsUniqueId: apnsUniqueId,
+        environment: configuration.environment,
+        topic: configuration.topic,
+        timestamp: payloadTimestamp,
+        hostname: configuration.hostname,
+        attributesType: payload.aps.attributesType,
+        event: payload.aps.event.rawValue
+      )
+
       if httpResponse.statusCode == 200 {
-        completion(.success("Live Activity push sent successfully!"))
+        completion(.success(apnsResponse))
       } else {
-        var reason = "Unknown error"
-        if let data = data,
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let r = json["reason"] as? String {
-          reason = r
-        }
-        completion(.failure(APNsError.requestFailed(statusCode: httpResponse.statusCode, reason: reason)))
+        completion(.failure(APNsError.requestFailed(response: apnsResponse)))
       }
     }.resume()
   }

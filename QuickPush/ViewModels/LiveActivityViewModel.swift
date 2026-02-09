@@ -79,6 +79,8 @@ class LiveActivityViewModel {
   var toastMessage: String = ""
   var toastType: ToastType = .success
   var showJSONSheet: Bool = false
+  var showResponseSheet: Bool = false
+  var lastResponse: APNsResponse?
 
   // MARK: - Init
   init() {
@@ -165,7 +167,7 @@ class LiveActivityViewModel {
     }
 
     let aps = LiveActivityAPS(
-      timestamp: Int(Date().timeIntervalSince1970),
+      timestamp: Int(Date().addingTimeInterval(5).timeIntervalSince1970),
       event: eventType,
       contentState: contentState,
       attributesType: eventType == .start ? attributesType : nil,
@@ -195,9 +197,13 @@ class LiveActivityViewModel {
         guard let self else { return }
         self.isSending = false
         switch result {
-        case .success(let message):
-          self.showToastMessage(message, type: .success)
+        case .success(let response):
+          self.lastResponse = response
+          self.showToastMessage(response.summary, type: .success)
         case .failure(let error):
+          if case APNsService.APNsError.requestFailed(let response) = error {
+            self.lastResponse = response
+          }
           self.showToastMessage(error.localizedDescription, type: .error)
         }
       }

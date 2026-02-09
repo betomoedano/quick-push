@@ -65,6 +65,10 @@ struct ToastView: View {
   let type: ToastType
   @Binding var isPresented: Bool
 
+  private var dismissDelay: TimeInterval {
+    type == .error ? 5 : 3
+  }
+
   var body: some View {
     VStack {
       Spacer()
@@ -79,7 +83,7 @@ struct ToastView: View {
         .cornerRadius(8)
         .padding(.bottom, 20)
         .onAppear {
-          DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+          DispatchQueue.main.asyncAfter(deadline: .now() + dismissDelay) {
             withAnimation {
               isPresented = false
             }

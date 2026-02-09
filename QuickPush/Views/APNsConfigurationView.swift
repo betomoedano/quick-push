@@ -73,9 +73,9 @@ struct APNsConfigurationView: View {
           HStack {
             Text("Attributes Type:")
               .frame(width: 95, alignment: .leading)
-            TextField("e.g. LiveActivityAttributes", text: $viewModel.attributesType)
+            TextField("e.g. MyWidget.LiveActivityAttributes", text: $viewModel.attributesType)
               .textFieldStyle(.roundedBorder)
-            HelpButton(helpText: "Must match your Swift ActivityAttributes struct name exactly. Used as the \"attributes-type\" in the APNs payload for start events.")
+            HelpButton(helpText: "Must match the fully module-qualified Swift type name of your ActivityAttributes struct. Run this in your iOS app to get the exact value:\n\nprint(String(reflecting: LiveActivityAttributes.self))\n\nCommon formats:\n• MyWidgetExtension.LiveActivityAttributes\n• LiveActivityAttributes\n\nA mismatch causes iOS to silently drop the push even if APNs returns 200.")
           }
 
           HStack {

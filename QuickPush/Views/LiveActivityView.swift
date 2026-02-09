@@ -17,6 +17,19 @@ struct LiveActivityView: View {
         Text("Live Activity")
           .font(.headline)
         Spacer()
+        if viewModel.lastResponse != nil {
+          Button {
+            viewModel.showResponseSheet = true
+          } label: {
+            HStack(spacing: 4) {
+              Circle()
+                .fill(viewModel.lastResponse?.isSuccess == true ? Color.green : Color.red)
+                .frame(width: 6, height: 6)
+              Text("Response")
+            }
+          }
+          .controlSize(.small)
+        }
         Button("JSON") {
           viewModel.showJSONSheet = true
         }
@@ -88,6 +101,9 @@ struct LiveActivityView: View {
     )
     .sheet(isPresented: $viewModel.showJSONSheet) {
       JSONImportExportView(viewModel: viewModel)
+    }
+    .sheet(isPresented: $viewModel.showResponseSheet) {
+      APNsResponseDetailView(response: viewModel.lastResponse)
     }
   }
 }

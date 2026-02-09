@@ -11,11 +11,12 @@ struct APNsConfiguration {
   var teamId: String = ""
   var keyId: String = ""
   var bundleId: String = ""
-  var p8FileURL: URL?
+  var p8Contents: String?
   var environment: APNsEnvironment = .sandbox
 
   var isValid: Bool {
-    !teamId.isEmpty && !keyId.isEmpty && !bundleId.isEmpty && p8FileURL != nil
+    !teamId.isEmpty && !keyId.isEmpty && !bundleId.isEmpty &&
+    p8Contents != nil && !p8Contents!.isEmpty
   }
 
   var hostname: String {

@@ -45,8 +45,7 @@ class APNsService {
       return
     }
 
-    guard let p8URL = configuration.p8FileURL,
-          let p8Contents = SecurityBookmarkManager.shared.readP8FileContents(from: p8URL) else {
+    guard let p8Contents = configuration.p8Contents, !p8Contents.isEmpty else {
       completion(.failure(APNsError.cannotReadP8File))
       return
     }

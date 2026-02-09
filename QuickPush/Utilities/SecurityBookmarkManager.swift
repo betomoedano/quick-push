@@ -8,11 +8,20 @@
 import Foundation
 import AppKit
 
+/// Manages selection and persistent storage of the .p8 APNs auth key.
+///
+/// Instead of relying on security-scoped bookmarks (which fail in sandbox
+/// and break across Xcode rebuilds), we read the file contents once when
+/// selected and store them directly in UserDefaults.
 class SecurityBookmarkManager {
   static let shared = SecurityBookmarkManager()
-  private let bookmarkKey = "p8FileBookmark"
 
-  func selectP8File(completion: @escaping (URL?) -> Void) {
+  private let p8ContentsKey = "p8FileContents"
+  private let p8FilenameKey = "p8FileName"
+
+  // MARK: - File Picker
+
+  func selectP8File(completion: @escaping (String?, String?) -> Void) {
     let panel = NSOpenPanel()
     panel.title = "Select APNs Auth Key (.p8)"
     panel.allowedContentTypes = [.init(filenameExtension: "p8")!]
@@ -21,61 +30,39 @@ class SecurityBookmarkManager {
 
     panel.begin { response in
       guard response == .OK, let url = panel.url else {
-        completion(nil)
+        completion(nil, nil)
         return
       }
 
-      self.saveBookmark(for: url)
-      completion(url)
-    }
-  }
+      // Read the file contents immediately while NSOpenPanel access is active.
+      let contents = try? String(contentsOf: url, encoding: .utf8)
+      let filename = url.lastPathComponent
 
-  func saveBookmark(for url: URL) {
-    do {
-      let bookmarkData = try url.bookmarkData(
-        options: .withSecurityScope,
-        includingResourceValuesForKeys: nil,
-        relativeTo: nil
-      )
-      UserDefaults.standard.set(bookmarkData, forKey: bookmarkKey)
-    } catch {
-      print("Failed to save bookmark: \(error)")
-    }
-  }
-
-  func resolveBookmark() -> URL? {
-    guard let bookmarkData = UserDefaults.standard.data(forKey: bookmarkKey) else {
-      return nil
-    }
-
-    do {
-      var isStale = false
-      let url = try URL(
-        resolvingBookmarkData: bookmarkData,
-        options: .withSecurityScope,
-        relativeTo: nil,
-        bookmarkDataIsStale: &isStale
-      )
-
-      if isStale {
-        saveBookmark(for: url)
+      if let contents {
+        self.saveP8(contents: contents, filename: filename)
       }
 
-      return url
-    } catch {
-      print("Failed to resolve bookmark: \(error)")
-      return nil
+      completion(contents, filename)
     }
   }
 
-  func readP8FileContents(from url: URL) -> String? {
-    let hasAccess = url.startAccessingSecurityScopedResource()
-    defer {
-      if hasAccess { url.stopAccessingSecurityScopedResource() }
-    }
+  // MARK: - Storage
 
-    // Try reading regardless — NSOpenPanel grants access during the session
-    // even if the security-scoped bookmark failed to save
-    return try? String(contentsOf: url, encoding: .utf8)
+  func saveP8(contents: String, filename: String) {
+    UserDefaults.standard.set(contents, forKey: p8ContentsKey)
+    UserDefaults.standard.set(filename, forKey: p8FilenameKey)
+  }
+
+  func storedP8Contents() -> String? {
+    UserDefaults.standard.string(forKey: p8ContentsKey)
+  }
+
+  func storedP8Filename() -> String? {
+    UserDefaults.standard.string(forKey: p8FilenameKey)
+  }
+
+  func clearStoredP8() {
+    UserDefaults.standard.removeObject(forKey: p8ContentsKey)
+    UserDefaults.standard.removeObject(forKey: p8FilenameKey)
   }
 }

@@ -60,8 +60,14 @@ class LiveActivityViewModel {
   var bundleId: String = "" {
     didSet { UserDefaults.standard.set(bundleId, forKey: "apns_bundleId") }
   }
-  var p8FileURL: URL? {
-    didSet { if let url = p8FileURL { SecurityBookmarkManager.shared.saveBookmark(for: url) } }
+  /// Display name of the selected .p8 file (e.g. "AuthKey_ABC123.p8").
+  var p8FileName: String?
+  /// The raw contents of the .p8 key are stored in SecurityBookmarkManager
+  /// and read on demand via `storedP8Contents()`. This flag tracks whether
+  /// a key has been selected.
+  var hasP8Key: Bool = false
+  var attributesType: String = "LiveActivityAttributes" {
+    didSet { UserDefaults.standard.set(attributesType, forKey: "apns_attributesType") }
   }
   var environment: APNsEnvironment = .sandbox {
     didSet { UserDefaults.standard.set(environment.rawValue, forKey: "apns_environment") }
@@ -79,7 +85,9 @@ class LiveActivityViewModel {
     teamId = UserDefaults.standard.string(forKey: "apns_teamId") ?? ""
     keyId = UserDefaults.standard.string(forKey: "apns_keyId") ?? ""
     bundleId = UserDefaults.standard.string(forKey: "apns_bundleId") ?? ""
-    p8FileURL = SecurityBookmarkManager.shared.resolveBookmark()
+    p8FileName = SecurityBookmarkManager.shared.storedP8Filename()
+    hasP8Key = SecurityBookmarkManager.shared.storedP8Contents() != nil
+    attributesType = UserDefaults.standard.string(forKey: "apns_attributesType") ?? "LiveActivityAttributes"
     if let envString = UserDefaults.standard.string(forKey: "apns_environment"),
        let env = APNsEnvironment(rawValue: envString) {
       environment = env
@@ -96,7 +104,7 @@ class LiveActivityViewModel {
       teamId: teamId,
       keyId: keyId,
       bundleId: bundleId,
-      p8FileURL: p8FileURL,
+      p8Contents: SecurityBookmarkManager.shared.storedP8Contents(),
       environment: environment
     )
   }
@@ -160,7 +168,7 @@ class LiveActivityViewModel {
       timestamp: Int(Date().timeIntervalSince1970),
       event: eventType,
       contentState: contentState,
-      attributesType: eventType == .start ? "ExpoLiveActivityAttributes" : nil,
+      attributesType: eventType == .start ? attributesType : nil,
       attributes: attributes,
       alert: alert,
       dismissalDate: eventType == .end ? Int(Date().addingTimeInterval(5).timeIntervalSince1970) : nil,
@@ -291,9 +299,11 @@ class LiveActivityViewModel {
 
   // MARK: - File Picker
   func selectP8File() {
-    SecurityBookmarkManager.shared.selectP8File { [weak self] url in
+    SecurityBookmarkManager.shared.selectP8File { [weak self] contents, filename in
       DispatchQueue.main.async {
-        self?.p8FileURL = url
+        guard let self else { return }
+        self.p8FileName = filename
+        self.hasP8Key = contents != nil
       }
     }
   }

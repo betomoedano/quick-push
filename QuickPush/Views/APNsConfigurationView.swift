@@ -54,8 +54,8 @@ struct APNsConfigurationView: View {
           HStack {
             Text(".p8 Key:")
               .frame(width: 70, alignment: .leading)
-            if let url = viewModel.p8FileURL {
-              Text(url.lastPathComponent)
+            if let name = viewModel.p8FileName, viewModel.hasP8Key {
+              Text(name)
                 .foregroundColor(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -68,6 +68,14 @@ struct APNsConfigurationView: View {
               viewModel.selectP8File()
             }
             .controlSize(.small)
+          }
+
+          HStack {
+            Text("Attributes Type:")
+              .frame(width: 95, alignment: .leading)
+            TextField("e.g. LiveActivityAttributes", text: $viewModel.attributesType)
+              .textFieldStyle(.roundedBorder)
+            HelpButton(helpText: "Must match your Swift ActivityAttributes struct name exactly. Used as the \"attributes-type\" in the APNs payload for start events.")
           }
 
           HStack {

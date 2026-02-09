@@ -6,34 +6,25 @@
 //
 
 import SwiftUI
-import LaunchAtLogin
 
 @main
 struct QuickPushApp: App {
+  @State private var windowManager = WindowManager()
+
   var body: some Scene {
     MenuBarExtra("QuickPush", systemImage: "bolt.brakesignal") {
-      VStack {
-        ContentView()
-        Divider()
-        VStack(spacing: 8) {
-          HStack {
-            LaunchAtLogin.Toggle()
-            Spacer()
-            Button("Quit") {
-              NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q")
+      MainContentView()
+        .environment(windowManager)
+        .onAppear {
+          // Register the global hotkey after the app has launched.
+          windowManager.startMonitoring()
+
+          // If the panel is already pinned, bring it to front
+          // instead of showing the popover content.
+          if windowManager.isPinned {
+            windowManager.bringPanelToFront()
           }
-          HStack(spacing: 0) { // Ensures no extra spacing
-              Text("Made with ❤️ by ")
-              Link("codewithbeto.dev", destination: URL(string: "https://codewithbeto.dev")!)
-                  .foregroundColor(.blue)
-          }
-          .font(.caption)
         }
-        .padding()
-      }
-      .frame(minWidth: 420)
     }
     .menuBarExtraStyle(.window)
   }

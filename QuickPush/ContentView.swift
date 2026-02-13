@@ -127,11 +127,31 @@ struct HelpButton: View {
         .foregroundColor(.secondary)
     }
     .popover(isPresented: $showHelp) {
-      Text(helpText)
-        .padding()
-        .frame(width: 250)
+      VStack(alignment: .leading, spacing: 8) {
+        Text(attributedHelpText)
+          .textSelection(.enabled)
+      }
+      .padding()
+      .frame(width: 300)
     }
     .buttonStyle(PlainButtonStyle())
+  }
+
+  private var attributedHelpText: AttributedString {
+    if let urlRange = helpText.range(of: "https://[^\\s]+", options: .regularExpression),
+       let url = URL(string: String(helpText[urlRange])) {
+      var attributedString = AttributedString(helpText)
+
+      if let range = attributedString.range(of: String(helpText[urlRange])) {
+        attributedString[range].link = url
+        attributedString[range].foregroundColor = .blue
+        attributedString[range].underlineStyle = .single
+      }
+
+      return attributedString
+    }
+
+    return AttributedString(helpText)
   }
 }
 

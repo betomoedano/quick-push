@@ -23,13 +23,18 @@ struct PushNotification: Codable {
   let categoryId: String?
   let mutableContent: Bool?
   let contentAvailable: Bool?
-  
+  let richContent: RichContent?
+
   enum Priority: String, Codable {
     case `default`, normal, high
   }
-  
+
   enum InterruptionLevel: String, Codable {
     case active, critical, passive, timeSensitive = "time-sensitive"
+  }
+
+  struct RichContent: Codable {
+    let image: String
   }
   
   enum CodingKeys: String, CodingKey {
@@ -39,6 +44,7 @@ struct PushNotification: Codable {
     case categoryId = "categoryId"
     case mutableContent = "mutableContent"
     case contentAvailable = "_contentAvailable"
+    case richContent
   }
   
   init(
@@ -56,7 +62,8 @@ struct PushNotification: Codable {
     channelId: String? = nil,
     categoryId: String? = nil,
     mutableContent: Bool? = false,
-    contentAvailable: Bool? = nil
+    contentAvailable: Bool? = nil,
+    richContent: RichContent? = nil
   ) {
     self.to = to
     self.title = title
@@ -73,5 +80,6 @@ struct PushNotification: Codable {
     self.categoryId = categoryId
     self.mutableContent = mutableContent
     self.contentAvailable = contentAvailable
+    self.richContent = richContent
   }
 }

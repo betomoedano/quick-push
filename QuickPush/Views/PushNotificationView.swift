@@ -28,6 +28,7 @@ struct PushNotificationView: View {
   @State private var categoryId: String = ""
   @State private var mutableContent: Bool = false
   @State private var contentAvailable: Bool = false
+  @State private var imageUrl: String = ""
 
   // Toast notification state
   @State private var showToast: Bool = false
@@ -211,6 +212,7 @@ struct PushNotificationView: View {
                   .font(.subheadline)
                   .foregroundColor(.secondary)
 
+                InputField(label: "Image (richContent)", text: $imageUrl, helpText: "URL of image to display in rich notification. Android will show the image out of the box. On iOS, you need to add a Notification Service Extension target to your app. See https://github.com/expo/expo/pull/36202 for an example.")
                 InputField(label: "Category ID", text: $categoryId, helpText: "Notification category for interactive notifications")
                 InputField(label: "TTL", text: $ttl, helpText: "Time-to-live in seconds")
                 InputField(label: "Expiration", text: $expiration, helpText: "Unix timestamp for expiration")
@@ -240,6 +242,8 @@ struct PushNotificationView: View {
 
     showTitleError = false
 
+    let richContent: PushNotification.RichContent? = imageUrl.isEmpty ? nil : PushNotification.RichContent(image: imageUrl)
+
     let notification = PushNotification(
       to: validTokens,
       title: title,
@@ -255,7 +259,8 @@ struct PushNotificationView: View {
       channelId: channelId.isEmpty ? nil : channelId,
       categoryId: categoryId.isEmpty ? nil : categoryId,
       mutableContent: mutableContent,
-      contentAvailable: contentAvailable
+      contentAvailable: contentAvailable,
+      richContent: richContent
     )
 
     PushNotificationService.shared.sendPushNotification(

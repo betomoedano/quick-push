@@ -23,6 +23,7 @@
 - **Send Live Activity pushes** (start, update, end) directly to APNs
 - Simple and intuitive interface for quick testing
 - Easy configuration of notification payload and options
+- **Rich content (image) support** for Android notifications via `richContent`
 - Advanced push notification features (priority, interruption level, TTL, and more)
 - Platform-specific settings for iOS and Android
 - Color pickers, progress sliders, and date pickers for Live Activity content
@@ -135,6 +136,24 @@ Click the **JSON** button in the Live Activity tab to:
 
 - **Export** the current form as a JSON payload (useful for debugging or sharing)
 - **Import** a JSON payload to populate the form fields (useful for quickly loading saved payloads)
+
+## 🖼️ Rich Content (Image Notifications)
+
+QuickPush supports the `richContent` field, allowing you to attach an image to your push notifications.
+
+1. Open the **Push Notification** tab
+2. Expand **Advanced Settings**
+3. In the **Common Settings** section, find the **Image (richContent)** field
+4. Paste the URL of the image you want to display
+
+### Platform behavior
+
+| Platform | Support |
+|---|---|
+| **Android** | Works out of the box — the image will display in the notification |
+| **iOS** | Requires a [Notification Service Extension](https://github.com/expo/expo/pull/36202) target in your app to process and display the image |
+
+> **Tip:** The help tooltip for this field includes a clickable link to the Expo PR with an iOS implementation example.
 
 ## 📸 Screenshots
 

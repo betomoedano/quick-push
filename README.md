@@ -8,29 +8,48 @@
 
 <p align="center">A lightweight macOS menu bar utility for quickly testing Expo push notifications and Live Activity updates</p>
 
-### Features highlights
+<p align="center">
+  <a href="https://apps.apple.com/us/app/quickpush-tool/id6758917536">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./.github/resources/Download_on_the_Mac_App_Store_Badge_US-UK_RGB_wht_092917.svg">
+      <img alt="Download on the Mac App Store" src="./.github/resources/Download_on_the_Mac_App_Store_Badge_US-UK_RGB_blk_092917.svg" height="48">
+    </picture>
+  </a>
+</p>
+
+### Features
 
 - Send test push notifications to your Expo apps directly from the menu bar
 - **Send Live Activity pushes** (start, update, end) directly to APNs
 - Simple and intuitive interface for quick testing
 - Easy configuration of notification payload and options
-- Advanced push notification features available
-- Platform specific settings available
+- Advanced push notification features (priority, interruption level, TTL, and more)
+- Platform-specific settings for iOS and Android
 - Color pickers, progress sliders, and date pickers for Live Activity content
 - JSON import/export for Live Activity payloads
 - APNs JWT authentication with .p8 key files (no third-party dependencies)
 
-Try out QuickPush now, explore its capabilities, and share your feedback. Your input will shape the future of this tool and guide us on where to take it next.
-
 ## 🛠️ Installation
 
-You can download the latest version of QuickPush for macOS from [quickpush/releases](https://github.com/betomoedano/quick-push/releases) page.
+<a href="https://apps.apple.com/us/app/quickpush-tool/id6758917536">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./.github/resources/Download_on_the_Mac_App_Store_Badge_US-UK_RGB_wht_092917.svg">
+    <img alt="Download on the Mac App Store" src="./.github/resources/Download_on_the_Mac_App_Store_Badge_US-UK_RGB_blk_092917.svg" height="48">
+  </picture>
+</a>
 
-1. Download the QuickPush.zip file
-2. Extract the zip file by double-clicking it
-3. Drag and drop the QuickPush app to your Applications folder
-4. Open QuickPush from your Applications folder
-5. The QuickPush icon will appear in your menu bar
+The easiest way to get QuickPush is from the [Mac App Store](https://apps.apple.com/us/app/quickpush-tool/id6758917536). One-time purchase, automatic updates, no setup required.
+
+#### Build from source
+
+QuickPush is open source. If you prefer, you can clone the repo and build it locally with Xcode:
+
+```bash
+git clone https://github.com/betomoedano/quick-push.git
+open quick-push/QuickPush.xcodeproj
+```
+
+Requires Xcode 16+ and macOS 14.6+.
 
 ## 🔴 Live Activity Setup
 
@@ -119,6 +138,16 @@ Click the **JSON** button in the Live Activity tab to:
 
 ## 📸 Screenshots
 
-<img width="504" alt="Screenshot 2025-02-22 at 7 08 40 PM" src="https://github.com/user-attachments/assets/d5900db9-1f88-4dd8-b33a-3f5873c4c3b7" />
+<img width="504" alt="QuickPush Push Notification" src="https://github.com/user-attachments/assets/d5900db9-1f88-4dd8-b33a-3f5873c4c3b7" />
 
-<img width="495" alt="Screenshot 2025-02-22 at 7 08 33 PM" src="https://github.com/user-attachments/assets/bda2d077-0b77-432e-aa8f-10db145b4751" />
+<img width="495" alt="QuickPush Advanced Settings" src="https://github.com/user-attachments/assets/bda2d077-0b77-432e-aa8f-10db145b4751" />
+
+## License
+
+MIT
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://codewithbeto.dev">codewithbeto.dev</a>
+</p>

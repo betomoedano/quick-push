@@ -22,8 +22,8 @@ final class FloatingPanel: NSPanel {
       styleMask: [
         .titled,
         .closable,
+        .miniaturizable,
         .resizable,
-        .fullSizeContentView
       ],
       backing: .buffered,
       defer: false
@@ -33,12 +33,41 @@ final class FloatingPanel: NSPanel {
     isFloatingPanel = true
     hidesOnDeactivate = false
     collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-    titlebarAppearsTransparent = true
+    titlebarAppearsTransparent = false
     titleVisibility = .hidden
     isMovableByWindowBackground = true
-    title = "QuickPush"
+    title = "Quick Push"
     isReleasedWhenClosed = false
     animationBehavior = .utilityWindow
+
+    // Custom icon + title placed directly in the titlebar
+    if let titlebarView = standardWindowButton(.closeButton)?.superview {
+      let iconView = NSImageView()
+      let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+      iconView.image = NSImage(
+        systemSymbolName: "bolt.brakesignal",
+        accessibilityDescription: "Quick Push"
+      )?.withSymbolConfiguration(config)
+      iconView.contentTintColor = .secondaryLabelColor
+      iconView.translatesAutoresizingMaskIntoConstraints = false
+
+      let label = NSTextField(labelWithString: "Quick Push")
+      label.font = .titleBarFont(ofSize: 13)
+      label.textColor = .labelColor
+      label.translatesAutoresizingMaskIntoConstraints = false
+
+      let stack = NSStackView(views: [iconView, label])
+      stack.orientation = .horizontal
+      stack.spacing = 4
+      stack.alignment = .centerY
+      stack.translatesAutoresizingMaskIntoConstraints = false
+
+      titlebarView.addSubview(stack)
+      NSLayoutConstraint.activate([
+        stack.centerYAnchor.constraint(equalTo: titlebarView.centerYAnchor),
+        stack.centerXAnchor.constraint(equalTo: titlebarView.centerXAnchor),
+      ])
+    }
 
     // Minimum size to keep the UI usable
     minSize = NSSize(width: 420, height: 460)

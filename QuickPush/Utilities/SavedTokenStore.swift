@@ -7,11 +7,18 @@
 
 import Foundation
 
-/// Manages persistent storage of saved Expo push tokens in UserDefaults.
+/// Manages persistent storage of saved push tokens in UserDefaults.
 class SavedTokenStore {
+  /// Store for Expo push tokens (ExponentPushToken format).
   static let shared = SavedTokenStore()
+  /// Store for native APNs device tokens (hex format).
+  static let nativePush = SavedTokenStore(storageKey: "savedNativePushTokens")
 
-  private let storageKey = "savedPushTokens"
+  private let storageKey: String
+
+  init(storageKey: String = "savedPushTokens") {
+    self.storageKey = storageKey
+  }
 
   // MARK: - Read
 

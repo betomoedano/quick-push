@@ -13,6 +13,7 @@ struct APNsConfiguration {
   var bundleId: String = ""
   var p8Contents: String?
   var environment: APNsEnvironment = .sandbox
+  var topicOverride: String? = nil
 
   var isValid: Bool {
     !teamId.isEmpty && !keyId.isEmpty && !bundleId.isEmpty &&
@@ -24,7 +25,7 @@ struct APNsConfiguration {
   }
 
   var topic: String {
-    "\(bundleId).push-type.liveactivity"
+    topicOverride ?? bundleId
   }
 }
 

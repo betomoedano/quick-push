@@ -8,8 +8,12 @@
 import SwiftUI
 
 struct APNsConfigurationView: View {
-  @Bindable var viewModel: LiveActivityViewModel
+  @Bindable var config: APNsConfigStore
   @State private var isExpanded: Bool = true
+
+  private var isValid: Bool {
+    !config.teamId.isEmpty && !config.keyId.isEmpty && !config.bundleId.isEmpty && config.hasP8Key
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
@@ -20,7 +24,7 @@ struct APNsConfigurationView: View {
             .fontWeight(.medium)
           Spacer()
           Circle()
-            .fill(viewModel.apnsConfiguration.isValid ? Color.green : Color.orange)
+            .fill(isValid ? Color.green : Color.orange)
             .frame(width: 8, height: 8)
           Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
             .foregroundColor(.secondary)
@@ -33,28 +37,28 @@ struct APNsConfigurationView: View {
           HStack {
             Text("Team ID:")
               .frame(width: 70, alignment: .leading)
-            TextField("e.g. A1B2C3D4E5", text: $viewModel.teamId)
+            TextField("e.g. A1B2C3D4E5", text: $config.teamId)
               .textFieldStyle(.roundedBorder)
           }
 
           HStack {
             Text("Key ID:")
               .frame(width: 70, alignment: .leading)
-            TextField("e.g. ABCDE12345", text: $viewModel.keyId)
+            TextField("e.g. ABCDE12345", text: $config.keyId)
               .textFieldStyle(.roundedBorder)
           }
 
           HStack {
             Text("Bundle ID:")
               .frame(width: 70, alignment: .leading)
-            TextField("e.g. com.example.app", text: $viewModel.bundleId)
+            TextField("e.g. com.example.app", text: $config.bundleId)
               .textFieldStyle(.roundedBorder)
           }
 
           HStack {
             Text(".p8 Key:")
               .frame(width: 70, alignment: .leading)
-            if let name = viewModel.p8FileName, viewModel.hasP8Key {
+            if let name = config.p8FileName, config.hasP8Key {
               Text(name)
                 .foregroundColor(.secondary)
                 .lineLimit(1)
@@ -65,22 +69,14 @@ struct APNsConfigurationView: View {
             }
             Spacer()
             Button("Browse...") {
-              viewModel.selectP8File()
+              config.selectP8File()
             }
             .controlSize(.small)
           }
 
           HStack {
-            Text("Attributes Type:")
-              .frame(width: 95, alignment: .leading)
-            TextField("e.g. MyWidget.LiveActivityAttributes", text: $viewModel.attributesType)
-              .textFieldStyle(.roundedBorder)
-            HelpButton(helpText: "Must match the fully module-qualified Swift type name of your ActivityAttributes struct. Run this in your iOS app to get the exact value:\n\nprint(String(reflecting: LiveActivityAttributes.self))\n\nCommon formats:\n• MyWidgetExtension.LiveActivityAttributes\n• LiveActivityAttributes\n\nA mismatch causes iOS to silently drop the push even if APNs returns 200.")
-          }
-
-          HStack {
             Text("Environment:")
-            Picker("", selection: $viewModel.environment) {
+            Picker("", selection: $config.environment) {
               Text("Sandbox").tag(APNsEnvironment.sandbox)
               Text("Production").tag(APNsEnvironment.production)
             }

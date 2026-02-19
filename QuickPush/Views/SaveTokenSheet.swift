@@ -7,10 +7,11 @@
 
 import SwiftUI
 
-/// Modal sheet for saving an Expo push token with a user-defined label.
+/// Modal sheet for saving a push token with a user-defined label.
 struct SaveTokenSheet: View {
   let token: String
   let onSave: (String) -> Void
+  var warningText: String = "Expo push tokens may change when you reinstall the app on your device."
   @Environment(\.dismiss) private var dismiss
   @State private var label: String = ""
 
@@ -58,7 +59,7 @@ struct SaveTokenSheet: View {
         Image(systemName: "exclamationmark.triangle.fill")
           .foregroundColor(.orange)
           .font(.caption)
-        Text("Expo push tokens may change when you reinstall the app on your device.")
+        Text(warningText)
           .font(.caption)
           .foregroundColor(.secondary)
       }

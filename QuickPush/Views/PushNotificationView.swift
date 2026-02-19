@@ -426,11 +426,3 @@ struct PushNotificationView: View {
   }
 }
 
-// MARK: - Token Save Sheet Item
-
-/// Identifiable wrapper for the `.sheet(item:)` presentation.
-struct TokenToSave: Identifiable {
-  let id = UUID()
-  let index: Int
-  let token: String
-}

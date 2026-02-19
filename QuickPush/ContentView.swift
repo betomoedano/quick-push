@@ -10,6 +10,7 @@ import SwiftUI
 enum AppTab: String, CaseIterable {
   case pushNotification = "Expo Notification"
   case liveActivity = "Live Activity"
+  case apnsPush = "APNs"
 }
 
 struct ContentView: View {
@@ -26,7 +27,7 @@ struct ContentView: View {
       .pickerStyle(.segmented)
       .padding(.top, 12)
 
-      // Tab Content — both views stay alive so @State is preserved
+      // Tab Content — all views stay alive so @State is preserved
       PushNotificationView()
         .opacity(selectedTab == .pushNotification ? 1 : 0)
         .frame(height: selectedTab == .pushNotification ? nil : 0)
@@ -36,6 +37,11 @@ struct ContentView: View {
         .opacity(selectedTab == .liveActivity ? 1 : 0)
         .frame(height: selectedTab == .liveActivity ? nil : 0)
         .allowsHitTesting(selectedTab == .liveActivity)
+
+      APNsView()
+        .opacity(selectedTab == .apnsPush ? 1 : 0)
+        .frame(height: selectedTab == .apnsPush ? nil : 0)
+        .allowsHitTesting(selectedTab == .apnsPush)
     }
     .frame(minHeight: 410)
   }

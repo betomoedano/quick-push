@@ -50,27 +50,10 @@ class LiveActivityViewModel {
   var alertBody: String = ""
   var alertSound: String = "default"
 
-  // MARK: - APNs Configuration
-  var teamId: String = "" {
-    didSet { UserDefaults.standard.set(teamId, forKey: "apns_teamId") }
-  }
-  var keyId: String = "" {
-    didSet { UserDefaults.standard.set(keyId, forKey: "apns_keyId") }
-  }
-  var bundleId: String = "" {
-    didSet { UserDefaults.standard.set(bundleId, forKey: "apns_bundleId") }
-  }
-  /// Display name of the selected .p8 file (e.g. "AuthKey_ABC123.p8").
-  var p8FileName: String?
-  /// The raw contents of the .p8 key are stored in SecurityBookmarkManager
-  /// and read on demand via `storedP8Contents()`. This flag tracks whether
-  /// a key has been selected.
-  var hasP8Key: Bool = false
+  // MARK: - APNs Configuration (shared with APNs tab)
+  var config: APNsConfigStore = .shared
   var attributesType: String = "LiveActivityAttributes" {
     didSet { UserDefaults.standard.set(attributesType, forKey: "apns_attributesType") }
-  }
-  var environment: APNsEnvironment = .sandbox {
-    didSet { UserDefaults.standard.set(environment.rawValue, forKey: "apns_environment") }
   }
 
   // MARK: - UI State
@@ -84,16 +67,7 @@ class LiveActivityViewModel {
 
   // MARK: - Init
   init() {
-    teamId = UserDefaults.standard.string(forKey: "apns_teamId") ?? ""
-    keyId = UserDefaults.standard.string(forKey: "apns_keyId") ?? ""
-    bundleId = UserDefaults.standard.string(forKey: "apns_bundleId") ?? ""
-    p8FileName = SecurityBookmarkManager.shared.storedP8Filename()
-    hasP8Key = SecurityBookmarkManager.shared.storedP8Contents() != nil
     attributesType = UserDefaults.standard.string(forKey: "apns_attributesType") ?? "LiveActivityAttributes"
-    if let envString = UserDefaults.standard.string(forKey: "apns_environment"),
-       let env = APNsEnvironment(rawValue: envString) {
-      environment = env
-    }
   }
 
   // MARK: - Validation
@@ -102,13 +76,7 @@ class LiveActivityViewModel {
   }
 
   var apnsConfiguration: APNsConfiguration {
-    APNsConfiguration(
-      teamId: teamId,
-      keyId: keyId,
-      bundleId: bundleId,
-      p8Contents: SecurityBookmarkManager.shared.storedP8Contents(),
-      environment: environment
-    )
+    config.apnsConfiguration(topicSuffix: ".push-type.liveactivity")
   }
 
   var tokenLabel: String {
@@ -305,13 +273,7 @@ class LiveActivityViewModel {
 
   // MARK: - File Picker
   func selectP8File() {
-    SecurityBookmarkManager.shared.selectP8File { [weak self] contents, filename in
-      DispatchQueue.main.async {
-        guard let self else { return }
-        self.p8FileName = filename
-        self.hasP8Key = contents != nil
-      }
-    }
+    config.selectP8File()
   }
 
   // MARK: - Clipboard

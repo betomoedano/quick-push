@@ -29,6 +29,7 @@
 - Color pickers, progress sliders, and date pickers for Live Activity content
 - JSON import/export for Live Activity payloads
 - APNs JWT authentication with .p8 key files (no third-party dependencies)
+- **Native APNs push** directly to raw device tokens — full payload control, image URL support
 
 ## 🛠️ Installation
 
@@ -136,6 +137,67 @@ Click the **JSON** button in the Live Activity tab to:
 
 - **Export** the current form as a JSON payload (useful for debugging or sharing)
 - **Import** a JSON payload to populate the form fields (useful for quickly loading saved payloads)
+
+## 📡 APNs Tab
+
+The **APNs** tab lets you send native iOS push notifications directly to Apple's Push Notification service — no Expo push token required. It's useful for testing notifications on devices where you only have the raw APNs device token, or when you need full control over the APNs payload.
+
+### Device Tokens
+
+APNs device tokens are raw hex strings (64 hex characters), different from Expo push tokens (`ExponentPushToken[...]`). Your app receives this token from the system:
+
+```swift
+// Swift (iOS)
+func application(_ application: UIApplication,
+                 didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    let token = deviceToken.map { String(format: "%02x", $0) }.joined()
+    print("APNs token:", token)
+}
+```
+
+Tokens can be saved across sessions using the save button next to the token field.
+
+### Payload Fields
+
+| Field | Description |
+|---|---|
+| **Title / Subtitle / Body** | Standard alert text |
+| **Sound** | `default` or a custom sound file name bundled in the app |
+| **Badge** | Number shown on the app icon |
+| **Image URL** | URL of an image to attach to the notification (see below) |
+| **Thread ID** | Groups related notifications together in the notification center |
+| **Category** | Enables interactive notification actions registered in the app |
+| **Interruption Level** | Controls delivery timing (Active, Passive, Time Sensitive, Critical) |
+| **Mutable Content** | Allows a Notification Service Extension to modify the payload before display |
+| **Content Available** | Wakes the app in the background to process the notification silently |
+| **Priority** | `10` = immediate, `5` = normal/background |
+
+### Image URL (via Notification Service Extension)
+
+APNs does not have a built-in image field. To display an image in a notification, the iOS app must include a **Notification Service Extension** — a small app extension that intercepts the push before it's shown, downloads the image, and attaches it as a media attachment.
+
+The Image URL field in QuickPush injects the URL into the payload under a custom key path:
+
+```json
+{
+  "aps": { "alert": { "title": "Hello" }, "mutable-content": 1 },
+  "body": { "_richContent": { "image": "https://example.com/photo.jpg" } }
+}
+```
+
+Your Notification Service Extension would read it like this:
+
+```swift
+// In NotificationService.swift
+let imageUrl = (request.content.userInfo["body"] as? [String: Any])
+    .flatMap { $0["_richContent"] as? [String: Any] }
+    .flatMap { $0["image"] as? String }
+    .flatMap { URL(string: $0) }
+```
+
+> **Note:** The exact key path (`body._richContent.image`) is the convention QuickPush uses. The key name your app listens for depends entirely on what the Notification Service Extension in that app is coded to read. If you're testing against an app that uses a different key, use the **Custom Data** section to inject the key manually instead.
+
+Filling in the Image URL field automatically enables **Mutable Content** in the payload, which is required for the Notification Service Extension to be invoked.
 
 ## 🖼️ Rich Content (Image Notifications)
 

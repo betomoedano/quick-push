@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PushNotificationView: View {
+  @Environment(WindowManager.self) var windowManager
   @State private var tokens: [String] = [""]
   @State private var accessToken: String = ""
   @State private var title: String = ""
@@ -81,7 +82,7 @@ struct PushNotificationView: View {
               Image(systemName: "return")
             }
             .font(.caption2)
-            .foregroundColor(.secondary)
+            .opacity(0.7)
           }
         }
         .keyboardShortcut(.return, modifiers: .command)
@@ -296,7 +297,7 @@ struct PushNotificationView: View {
                   .font(.subheadline)
                   .foregroundColor(.secondary)
 
-                InputField(label: "Image (richContent)", text: $imageUrl, helpText: "URL of image to display in rich notification. Android will show the image out of the box. On iOS, you need to add a Notification Service Extension target to your app. See https://github.com/expo/expo/pull/36202 for an example.")
+                InputField(label: "Image (richContent)", text: $imageUrl, helpText: "URL of image to display in rich notification. Android shows it out of the box. iOS requires a Notification Service Extension — learn how in this free lesson: https://codewithbeto.dev/rnCourse/expoNotificationsExtension See also https://github.com/expo/expo/pull/36202")
                 InputField(label: "Category ID", text: $categoryId, helpText: "Notification category for interactive notifications")
                 InputField(label: "TTL", text: $ttl, helpText: "Time-to-live in seconds")
                 InputField(label: "Expiration", text: $expiration, helpText: "Unix timestamp for expiration")
@@ -311,20 +312,20 @@ struct PushNotificationView: View {
       ToastView(message: toastMessage, type: toastType, isPresented: $showToast)
         .animation(.easeInOut, value: showToast)
     )
-    .popover(isPresented: $showResponseSheet, arrowEdge: .top) {
+    .adaptivePresentation(isPresented: $showResponseSheet, isPinned: windowManager.isPinned) {
       ExpoResponseDetailView(
         response: lastResponse,
         httpStatusCode: lastHttpStatusCode,
         rawJSON: lastRawJSON
       )
     }
-    .popover(isPresented: $showCurlSheet, arrowEdge: .top) {
+    .adaptivePresentation(isPresented: $showCurlSheet, isPinned: windowManager.isPinned) {
       ExpoCurlCommandView(
         notification: buildNotification(),
         accessToken: accessToken.isEmpty ? nil : accessToken
       )
     }
-    .popover(item: $tokenToSave, arrowEdge: .top) { item in
+    .adaptivePresentation(item: $tokenToSave, isPinned: windowManager.isPinned) { item in
       SaveTokenSheet(token: item.token) { label in
         let savedToken = SavedToken(label: label, token: item.token)
         SavedTokenStore.shared.addToken(savedToken)

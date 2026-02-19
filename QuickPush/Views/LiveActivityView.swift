@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct LiveActivityView: View {
+  @Environment(WindowManager.self) var windowManager
   @State private var viewModel = LiveActivityViewModel()
 
   var body: some View {
@@ -99,10 +100,10 @@ struct LiveActivityView: View {
       ToastView(message: viewModel.toastMessage, type: viewModel.toastType, isPresented: $viewModel.showToast)
         .animation(.easeInOut, value: viewModel.showToast)
     )
-    .popover(isPresented: $viewModel.showJSONSheet, arrowEdge: .top) {
+    .adaptivePresentation(isPresented: $viewModel.showJSONSheet, isPinned: windowManager.isPinned) {
       JSONImportExportView(viewModel: viewModel)
     }
-    .popover(isPresented: $viewModel.showResponseSheet, arrowEdge: .top) {
+    .adaptivePresentation(isPresented: $viewModel.showResponseSheet, isPinned: windowManager.isPinned) {
       APNsResponseDetailView(response: viewModel.lastResponse)
     }
   }

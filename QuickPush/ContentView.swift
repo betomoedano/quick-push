@@ -139,20 +139,18 @@ struct HelpButton: View {
   }
 
   private var attributedHelpText: AttributedString {
-    if let urlRange = helpText.range(of: "https://[^\\s]+", options: .regularExpression),
-       let url = URL(string: String(helpText[urlRange])) {
-      var attributedString = AttributedString(helpText)
-
-      if let range = attributedString.range(of: String(helpText[urlRange])) {
-        attributedString[range].link = url
-        attributedString[range].foregroundColor = .blue
-        attributedString[range].underlineStyle = .single
-      }
-
-      return attributedString
+    var attributedString = AttributedString(helpText)
+    // Find all URLs and make them clickable
+    var searchStart = helpText.startIndex
+    while let urlRange = helpText.range(of: "https://[^\\s]+", options: .regularExpression, range: searchStart..<helpText.endIndex),
+          let url = URL(string: String(helpText[urlRange])),
+          let attrRange = attributedString.range(of: String(helpText[urlRange])) {
+      attributedString[attrRange].link = url
+      attributedString[attrRange].foregroundColor = .blue
+      attributedString[attrRange].underlineStyle = .single
+      searchStart = urlRange.upperBound
     }
-
-    return AttributedString(helpText)
+    return attributedString
   }
 }
 

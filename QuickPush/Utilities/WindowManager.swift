@@ -60,13 +60,26 @@ final class WindowManager {
       panel = newPanel
     }
 
-    // Host the SwiftUI content inside the panel
+    // Host the SwiftUI content inside the panel's blur view
     let content = MainContentView()
       .environment(self)
 
     let hostingView = NSHostingView(rootView: content)
     hostingView.sizingOptions = [.minSize]
-    panel?.contentView = hostingView
+    hostingView.translatesAutoresizingMaskIntoConstraints = false
+    hostingView.layer?.backgroundColor = .clear
+
+    if let blurView = panel?.contentView {
+      // Remove any previous hosting view
+      blurView.subviews.forEach { $0.removeFromSuperview() }
+      blurView.addSubview(hostingView)
+      NSLayoutConstraint.activate([
+        hostingView.topAnchor.constraint(equalTo: blurView.topAnchor),
+        hostingView.bottomAnchor.constraint(equalTo: blurView.bottomAnchor),
+        hostingView.leadingAnchor.constraint(equalTo: blurView.leadingAnchor),
+        hostingView.trailingAnchor.constraint(equalTo: blurView.trailingAnchor),
+      ])
+    }
 
     // Show the panel after a brief delay so the popover finishes closing.
     DispatchQueue.main.async { [weak self] in
@@ -97,7 +110,8 @@ final class WindowManager {
 
     // Detach the SwiftUI hosting view FIRST so it doesn't try to
     // re-render while the window disappears underneath it.
-    panel.contentView = nil
+    // Keep the blur view alive — only remove the hosting subview.
+    panel.contentView?.subviews.forEach { $0.removeFromSuperview() }
 
     // Now hide the panel safely.
     panel.orderOut(nil)

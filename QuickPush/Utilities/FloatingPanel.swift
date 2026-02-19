@@ -39,6 +39,15 @@ final class FloatingPanel: NSPanel {
     title = "Quick Push"
     isReleasedWhenClosed = false
     animationBehavior = .utilityWindow
+    isOpaque = false
+    backgroundColor = .clear
+
+    // Frosted glass background
+    let blurView = NSVisualEffectView()
+    blurView.material = .hudWindow
+    blurView.blendingMode = .behindWindow
+    blurView.state = .active
+    contentView = blurView
 
     // Custom icon + title placed directly in the titlebar
     if let titlebarView = standardWindowButton(.closeButton)?.superview {

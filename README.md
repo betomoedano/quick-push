@@ -6,7 +6,7 @@
   <h1 align="center">QuickPush Tool</h1>
 </p>
 
-<p align="center">A lightweight macOS menu bar utility for quickly testing Expo push notifications and Live Activity updates</p>
+<p align="center">A lightweight macOS menu bar utility for quickly testing Expo push notifications, Live Activity updates, native APNs, and FCM (Android) pushes</p>
 
 <p align="center">
   <a href="https://apps.apple.com/us/app/quickpush-tool/id6758917536">
@@ -30,6 +30,7 @@
 - JSON import/export for Live Activity payloads
 - APNs JWT authentication with .p8 key files (no third-party dependencies)
 - **Native APNs push** directly to raw device tokens — full payload control, image URL support
+- **Native FCM push** directly to Firebase Cloud Messaging HTTP v1 API — service account auth, no SDKs required
 
 ## 🛠️ Installation
 
@@ -198,6 +199,131 @@ let imageUrl = (request.content.userInfo["body"] as? [String: Any])
 > **Note:** The exact key path (`body._richContent.image`) is the convention QuickPush uses. The key name your app listens for depends entirely on what the Notification Service Extension in that app is coded to read. If you're testing against an app that uses a different key, use the **Custom Data** section to inject the key manually instead.
 
 Filling in the Image URL field automatically enables **Mutable Content** in the payload, which is required for the Notification Service Extension to be invoked.
+
+## 🤖 FCM Tab
+
+The **FCM** tab lets you send native Android push notifications directly to Firebase Cloud Messaging's HTTP v1 API — no Expo push token required. It authenticates using a Firebase service account, signs OAuth 2.0 tokens locally with RS256 (no third-party SDKs), and supports both notification and data-only messages.
+
+### 1. Create a Firebase Project
+
+If you don't already have one:
+
+1. Go to the [Firebase Console](https://console.firebase.google.com/)
+2. Click **Add project** and follow the setup wizard
+3. Once created, add your Android app to the project (**Project settings → Your apps → Add app**)
+
+### 2. Generate a Service Account Key
+
+QuickPush authenticates with FCM using a **service account JSON** file. This is the same credential type used by Firebase Admin SDKs.
+
+1. In the [Firebase Console](https://console.firebase.google.com/), open your project
+2. Go to **Project settings** (gear icon) → **Service accounts** tab
+3. Click **Generate new private key**
+4. Confirm by clicking **Generate key** — a `.json` file will download
+
+The JSON file contains your project ID, client email, and private key. QuickPush reads all three from the file automatically when you select it.
+
+> **Keep this file secure.** Anyone with it can send push notifications to all users of your app. Don't commit it to version control.
+
+### 3. Find your FCM Registration Token
+
+The FCM registration token identifies a specific app install on a device. It's not the same as an Expo push token.
+
+**React Native / Expo (using `@react-native-firebase/messaging`):**
+
+```js
+import messaging from '@react-native-firebase/messaging';
+
+const token = await messaging().getToken();
+console.log('FCM token:', token);
+```
+
+**React Native / Expo (using `expo-notifications`):**
+
+```js
+import * as Notifications from 'expo-notifications';
+
+const { data: token } = await Notifications.getDevicePushTokenAsync();
+// On Android this returns the raw FCM registration token
+console.log('FCM token:', token);
+```
+
+FCM tokens are long base64url strings (~163+ characters). They can change when the user reinstalls the app or clears app data.
+
+### 4. Configure QuickPush
+
+1. Open QuickPush from your menu bar
+2. Switch to the **FCM** tab (⌘4)
+3. Expand the **FCM Configuration** section
+4. Click **Browse...** and select your downloaded service account `.json` file
+5. **Project ID** and **Client Email** are auto-filled from the file — verify they look correct
+
+> Your configuration is saved automatically and persists between sessions. The service account JSON contents are stored in macOS user defaults (local to your machine, not synced).
+
+### 5. Send a Push
+
+1. Paste your FCM registration token into the token field (or use the save button to store it for future sessions)
+2. Choose the **Message Type**:
+   - **Notification** — displays a visible notification on the device
+   - **Data** — delivers a silent data payload to the app; no notification UI is shown
+3. Fill in the notification fields (Title, Body, Image URL, Channel ID, Sound, Color)
+4. Optionally add **Custom Data** key-value pairs — these are delivered in the message's `data` block
+5. Click **Send** (or ⌘↵)
+
+### Message Types
+
+| Type | Description | When to use |
+|---|---|---|
+| **Notification** | Shows a visible notification with title, body, and optional image | User-facing alerts |
+| **Data** | Silent payload delivered to the app; no system UI | Background processing, in-app messages |
+
+### Notification Fields
+
+| Field | Description |
+|---|---|
+| **Title** | Title of the notification |
+| **Body** | Main message content |
+| **Image URL** | URL of an image displayed in the expanded notification |
+| **Channel ID** | Android notification channel the app must have pre-created (defaults to `default`) |
+| **Sound** | Sound to play — use `default` for the device default |
+| **Color** | Accent color for the notification icon, in hex format (e.g. `FF5733`) |
+
+### Priority
+
+| Value | Description |
+|---|---|
+| **HIGH** | Wakes the device immediately — use for user-visible notifications |
+| **NORMAL** | May be delayed for battery optimization — suitable for non-urgent data messages |
+
+### FCM Error Codes
+
+| Code | Meaning |
+|---|---|
+| `INVALID_ARGUMENT` | The request payload is malformed or the token format is wrong |
+| `NOT_FOUND` / `UNREGISTERED` | The token is no longer valid; the app was uninstalled or the token expired |
+| `SENDER_ID_MISMATCH` | The token was registered with a different Firebase project |
+| `QUOTA_EXCEEDED` | Sending rate too high; retry with exponential backoff |
+| `UNAVAILABLE` | FCM service temporarily unavailable; retry with exponential backoff |
+| `INTERNAL` | Internal FCM server error; retry with exponential backoff |
+
+### Getting a cURL Command
+
+Click the **cURL** button to generate a ready-to-run curl command for the current configuration. Because the OAuth access token requires an async exchange with Google's servers, the cURL output uses an `<ACCESS_TOKEN>` placeholder. To fill it in:
+
+```bash
+# Using the Google Cloud CLI
+gcloud auth print-access-token
+
+# Or using the service account directly
+gcloud auth activate-service-account --key-file=/path/to/service-account.json
+gcloud auth print-access-token
+```
+
+Replace `<ACCESS_TOKEN>` in the copied curl command with the token output.
+
+### Saved Tokens
+
+Click the **save** icon (↓) next to any token to store it with a label. Saved tokens persist across app restarts and appear at the top of the token list with a toggle to include or exclude them from sends.
 
 ## 🖼️ Rich Content (Image Notifications)
 

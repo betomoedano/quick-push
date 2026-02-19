@@ -11,12 +11,14 @@ enum AppTab: String, CaseIterable {
   case pushNotification = "Expo Notification"
   case liveActivity = "Live Activity"
   case apnsPush = "APNs"
+  case fcm = "FCM"
 
   var icon: String {
     switch self {
     case .pushNotification: return "bell.badge"
     case .liveActivity: return "waveform"
     case .apnsPush: return "antenna.radiowaves.left.and.right"
+    case .fcm: return "server.rack"
     }
   }
 
@@ -26,6 +28,7 @@ enum AppTab: String, CaseIterable {
     case .pushNotification: return "Expo Notification  ⌘1"
     case .liveActivity: return "Live Activity  ⌘2"
     case .apnsPush: return "APNs  ⌘3"
+    case .fcm: return "FCM  ⌘4"
     }
   }
 }
@@ -60,9 +63,14 @@ struct ContentView: View {
         .opacity(selectedTab == .apnsPush ? 1 : 0)
         .frame(height: selectedTab == .apnsPush ? nil : 0)
         .allowsHitTesting(selectedTab == .apnsPush)
+
+      FCMView(isActive: selectedTab == .fcm)
+        .opacity(selectedTab == .fcm ? 1 : 0)
+        .frame(height: selectedTab == .fcm ? nil : 0)
+        .allowsHitTesting(selectedTab == .fcm)
     }
     .frame(minHeight: 410)
-    // ⌘1/2/3 to switch tabs
+    // ⌘1/2/3/4 to switch tabs
     .background(
       Group {
         Button("") { selectedTab = .pushNotification }
@@ -71,6 +79,8 @@ struct ContentView: View {
           .keyboardShortcut("2", modifiers: .command)
         Button("") { selectedTab = .apnsPush }
           .keyboardShortcut("3", modifiers: .command)
+        Button("") { selectedTab = .fcm }
+          .keyboardShortcut("4", modifiers: .command)
       }
       .frame(width: 0, height: 0)
       .opacity(0)

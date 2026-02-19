@@ -79,7 +79,7 @@ final class FloatingPanel: NSPanel {
     }
 
     // Minimum size to keep the UI usable
-    minSize = NSSize(width: 420, height: 460)
+    minSize = NSSize(width: 520, height: 460)
 
     // Restore saved position or center on screen
     if let frameString = UserDefaults.standard.string(forKey: "FloatingPanelFrame"),

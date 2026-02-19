@@ -52,7 +52,7 @@ final class WindowManager {
 
     // Create the floating panel if needed
     if panel == nil {
-      let rect = NSRect(x: 0, y: 0, width: 420, height: 500)
+      let rect = NSRect(x: 0, y: 0, width: 520, height: 500)
       let newPanel = FloatingPanel(contentRect: rect)
       newPanel.onClose = { [weak self] in
         self?.unpin()

@@ -13,6 +13,8 @@ class SavedTokenStore {
   static let shared = SavedTokenStore()
   /// Store for native APNs device tokens (hex format).
   static let nativePush = SavedTokenStore(storageKey: "savedNativePushTokens")
+  /// Store for FCM registration tokens.
+  static let fcm = SavedTokenStore(storageKey: "savedFCMTokens")
 
   private let storageKey: String
 

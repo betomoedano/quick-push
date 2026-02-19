@@ -26,13 +26,16 @@ struct ContentView: View {
       .pickerStyle(.segmented)
       .padding(.top, 12)
 
-      // Tab Content
-      switch selectedTab {
-      case .pushNotification:
-        PushNotificationView()
-      case .liveActivity:
-        LiveActivityView()
-      }
+      // Tab Content — both views stay alive so @State is preserved
+      PushNotificationView()
+        .opacity(selectedTab == .pushNotification ? 1 : 0)
+        .frame(height: selectedTab == .pushNotification ? nil : 0)
+        .allowsHitTesting(selectedTab == .pushNotification)
+
+      LiveActivityView()
+        .opacity(selectedTab == .liveActivity ? 1 : 0)
+        .frame(height: selectedTab == .liveActivity ? nil : 0)
+        .allowsHitTesting(selectedTab == .liveActivity)
     }
     .frame(minHeight: 410)
   }

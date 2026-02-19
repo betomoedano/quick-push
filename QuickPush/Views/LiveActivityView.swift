@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct LiveActivityView: View {
+  var isActive: Bool = true
   @Environment(WindowManager.self) var windowManager
   @State private var viewModel = LiveActivityViewModel()
 
@@ -35,10 +36,33 @@ struct LiveActivityView: View {
           viewModel.showJSONSheet = true
         }
         .controlSize(.small)
-        Button("Send") {
+        Button {
           viewModel.send()
+        } label: {
+          HStack(spacing: 4) {
+            Text("Send")
+            HStack(spacing: 1) {
+              Image(systemName: "command")
+              Image(systemName: "return")
+            }
+            .font(.caption2)
+            .opacity(0.7)
+          }
         }
-        .buttonStyle(.borderedProminent)
+        .applying { view in
+          if isActive {
+            view.keyboardShortcut(.return, modifiers: .command)
+          } else {
+            view
+          }
+        }
+        .applying { view in
+          if #available(macOS 26.0, *) {
+            view.buttonStyle(.glassProminent)
+          } else {
+            view.buttonStyle(.borderedProminent)
+          }
+        }
         .disabled(!viewModel.canSend)
       }
 

@@ -12,9 +12,13 @@ class NativePushViewModel {
   // MARK: - Shared APNs config
   var config: APNsConfigStore = .shared
 
-  // MARK: - Token
-  var deviceToken: String = ""
+  // MARK: - Tokens
+  var tokens: [String] = [""]
   var savedTokens: [SavedToken] = []
+
+  var allValidTokens: [String] {
+    savedTokens.filter(\.isEnabled).map(\.token) + tokens.filter { !$0.isEmpty }
+  }
 
   // MARK: - Push fields
   var pushType: NativePushType = .alert
@@ -50,18 +54,20 @@ class NativePushViewModel {
 
   // MARK: - Validation
   var canSend: Bool {
-    !deviceToken.isEmpty && config.apnsConfiguration(topicSuffix: nil).isValid && !isSending
+    !allValidTokens.isEmpty && config.apnsConfiguration(topicSuffix: nil).isValid && !isSending
   }
 
   // MARK: - Build Payload
   func buildPayload() -> NativePushPayload {
     var alert: NativeAlert?
     if pushType == .alert {
-      alert = NativeAlert(
-        title: title.isEmpty ? nil : title,
-        subtitle: subtitle.isEmpty ? nil : subtitle,
-        body: body.isEmpty ? nil : body
-      )
+      let t = title.isEmpty ? nil : title
+      let s = subtitle.isEmpty ? nil : subtitle
+      let b = body.isEmpty ? nil : body
+      // Only include alert key if there is at least some visible content
+      if t != nil || s != nil || b != nil {
+        alert = NativeAlert(title: t, subtitle: s, body: b)
+      }
     }
 
     let effectiveMutableContent = mutableContent || !imageUrl.isEmpty
@@ -82,31 +88,55 @@ class NativePushViewModel {
   // MARK: - Send
   func send() {
     guard canSend else { return }
+
+    if pushType == .alert && title.isEmpty && body.isEmpty {
+      showToastMessage("Alert notifications require at least a title or body.", type: .error)
+      return
+    }
+
     isSending = true
 
+    let validTokens = allValidTokens
     let payload = buildPayload()
     let configuration = config.apnsConfiguration(topicSuffix: nil)
 
-    APNsService.shared.sendNativePush(
-      payload: payload,
-      token: deviceToken,
-      pushType: pushType,
-      priority: priority,
-      configuration: configuration
-    ) { [weak self] result in
-      DispatchQueue.main.async {
-        guard let self else { return }
-        self.isSending = false
+    let group = DispatchGroup()
+    var responses: [APNsResponse] = []
+    var firstError: Error?
+
+    for token in validTokens {
+      group.enter()
+      APNsService.shared.sendNativePush(
+        payload: payload,
+        token: token,
+        pushType: pushType,
+        priority: priority,
+        configuration: configuration
+      ) { result in
         switch result {
         case .success(let response):
-          self.lastResponse = response
-          self.showToastMessage(response.summary, type: .success)
+          responses.append(response)
         case .failure(let error):
+          if firstError == nil { firstError = error }
           if case APNsService.APNsError.requestFailed(let response) = error {
-            self.lastResponse = response
+            responses.append(response)
           }
-          self.showToastMessage(error.localizedDescription, type: .error)
         }
+        group.leave()
+      }
+    }
+
+    group.notify(queue: .main) { [weak self] in
+      guard let self else { return }
+      self.isSending = false
+      self.lastResponse = responses.last
+      if let error = firstError {
+        self.showToastMessage(error.localizedDescription, type: .error)
+      } else {
+        let msg = responses.count == 1
+          ? responses[0].summary
+          : "\(responses.count) pushes sent"
+        self.showToastMessage(msg, type: .success)
       }
     }
   }
@@ -126,7 +156,7 @@ class NativePushViewModel {
       jwt = "<JWT>"
     }
 
-    let cleanToken = deviceToken.trimmingCharacters(in: .whitespacesAndNewlines)
+    let cleanToken = (allValidTokens.first ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     let payload = buildPayload()
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -140,6 +170,9 @@ class NativePushViewModel {
 
     var lines: [String] = []
     lines.append("# Note: JWT tokens expire after 1 hour.")
+    if allValidTokens.count > 1 {
+      lines.append("# cURL shown for the first token. Repeat for each additional token.")
+    }
     lines.append("curl --http2 -X POST \\")
     lines.append("  https://\(configuration.hostname)/3/device/\(cleanToken) \\")
     lines.append("  -H \"authorization: bearer \(jwt)\" \\")
@@ -153,15 +186,16 @@ class NativePushViewModel {
   }
 
   // MARK: - Clipboard
-  func pasteToken() {
-    if let clipboardString = NSPasteboard.general.string(forType: .string) {
-      let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
-      let hexCharacterSet = CharacterSet(charactersIn: "0123456789abcdefABCDEF")
-      if trimmed.unicodeScalars.allSatisfy({ hexCharacterSet.contains($0) }) && !trimmed.isEmpty {
-        deviceToken = trimmed
-      } else {
-        showToastMessage("Invalid token format. Expected hex string.", type: .error)
+  func pasteToken(at index: Int) {
+    guard let clipboardString = NSPasteboard.general.string(forType: .string) else { return }
+    let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
+    let hexCharacterSet = CharacterSet(charactersIn: "0123456789abcdefABCDEF")
+    if trimmed.unicodeScalars.allSatisfy({ hexCharacterSet.contains($0) }) && !trimmed.isEmpty {
+      if index < tokens.count {
+        tokens[index] = trimmed
       }
+    } else {
+      showToastMessage("Invalid token format. Expected hex string.", type: .error)
     }
   }
 

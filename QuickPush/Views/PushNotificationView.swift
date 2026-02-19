@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PushNotificationView: View {
+  var isActive: Bool = true
   @Environment(WindowManager.self) var windowManager
   @State private var tokens: [String] = [""]
   @State private var accessToken: String = ""
@@ -85,7 +86,13 @@ struct PushNotificationView: View {
             .opacity(0.7)
           }
         }
-        .keyboardShortcut(.return, modifiers: .command)
+        .applying { view in
+          if isActive {
+            view.keyboardShortcut(.return, modifiers: .command)
+          } else {
+            view
+          }
+        }
         .applying { view in
           if #available(macOS 26.0, *) {
             view.buttonStyle(.glassProminent)

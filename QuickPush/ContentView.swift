@@ -11,6 +11,23 @@ enum AppTab: String, CaseIterable {
   case pushNotification = "Expo Notification"
   case liveActivity = "Live Activity"
   case apnsPush = "APNs"
+
+  var icon: String {
+    switch self {
+    case .pushNotification: return "bell.badge"
+    case .liveActivity: return "waveform"
+    case .apnsPush: return "antenna.radiowaves.left.and.right"
+    }
+  }
+
+  /// Label shown in the segmented picker, embedding the ⌘N shortcut hint.
+  var tabLabel: String {
+    switch self {
+    case .pushNotification: return "Expo Notification  ⌘1"
+    case .liveActivity: return "Live Activity  ⌘2"
+    case .apnsPush: return "APNs  ⌘3"
+    }
+  }
 }
 
 struct ContentView: View {
@@ -21,29 +38,43 @@ struct ContentView: View {
       // Tab Picker
       Picker("", selection: $selectedTab) {
         ForEach(AppTab.allCases, id: \.self) { tab in
-          Text(tab.rawValue).tag(tab)
+          Label(tab.tabLabel, systemImage: tab.icon).tag(tab)
         }
       }
       .pickerStyle(.segmented)
       .padding(.top, 12)
+      .padding(.bottom, 4)
 
       // Tab Content — all views stay alive so @State is preserved
-      PushNotificationView()
+      PushNotificationView(isActive: selectedTab == .pushNotification)
         .opacity(selectedTab == .pushNotification ? 1 : 0)
         .frame(height: selectedTab == .pushNotification ? nil : 0)
         .allowsHitTesting(selectedTab == .pushNotification)
 
-      LiveActivityView()
+      LiveActivityView(isActive: selectedTab == .liveActivity)
         .opacity(selectedTab == .liveActivity ? 1 : 0)
         .frame(height: selectedTab == .liveActivity ? nil : 0)
         .allowsHitTesting(selectedTab == .liveActivity)
 
-      APNsView()
+      APNsView(isActive: selectedTab == .apnsPush)
         .opacity(selectedTab == .apnsPush ? 1 : 0)
         .frame(height: selectedTab == .apnsPush ? nil : 0)
         .allowsHitTesting(selectedTab == .apnsPush)
     }
     .frame(minHeight: 410)
+    // ⌘1/2/3 to switch tabs
+    .background(
+      Group {
+        Button("") { selectedTab = .pushNotification }
+          .keyboardShortcut("1", modifiers: .command)
+        Button("") { selectedTab = .liveActivity }
+          .keyboardShortcut("2", modifiers: .command)
+        Button("") { selectedTab = .apnsPush }
+          .keyboardShortcut("3", modifiers: .command)
+      }
+      .frame(width: 0, height: 0)
+      .opacity(0)
+    )
   }
 }
 

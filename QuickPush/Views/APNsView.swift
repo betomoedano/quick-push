@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct APNsView: View {
+  var isActive: Bool = true
   @Environment(WindowManager.self) var windowManager
   @State private var viewModel = NativePushViewModel()
 
@@ -50,7 +51,13 @@ struct APNsView: View {
             .opacity(0.7)
           }
         }
-        .keyboardShortcut(.return, modifiers: .command)
+        .applying { view in
+          if isActive {
+            view.keyboardShortcut(.return, modifiers: .command)
+          } else {
+            view
+          }
+        }
         .applying { view in
           if #available(macOS 26.0, *) {
             view.buttonStyle(.glassProminent)
@@ -76,10 +83,6 @@ struct APNsView: View {
                   if let index = viewModel.savedTokens.firstIndex(where: { $0.id == saved.id }) {
                     viewModel.savedTokens[index].isEnabled.toggle()
                     SavedTokenStore.nativePush.saveTokens(viewModel.savedTokens)
-                    // Use the enabled token as the active device token
-                    if viewModel.savedTokens[index].isEnabled {
-                      viewModel.deviceToken = viewModel.savedTokens[index].token
-                    }
                   }
                 },
                 onCopy: {
@@ -94,26 +97,47 @@ struct APNsView: View {
               )
             }
 
-            // Unsaved token field
-            HStack {
-              TextField("Hex device token", text: $viewModel.deviceToken)
-                .textFieldStyle(.roundedBorder)
-              Button(action: { viewModel.pasteToken() }) {
-                Image(systemName: "doc.on.clipboard")
-                  .foregroundColor(.secondary)
+            // Unsaved token rows
+            ForEach(viewModel.tokens.indices, id: \.self) { index in
+              HStack(spacing: 8) {
+                TextField("Hex device token", text: $viewModel.tokens[index])
+                  .textFieldStyle(.roundedBorder)
+
+                Button(action: { viewModel.pasteToken(at: index) }) {
+                  Image(systemName: "doc.on.clipboard")
+                    .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Paste hex token from clipboard")
+
+                Button(action: {
+                  viewModel.tokenToSave = TokenToSave(index: index, token: viewModel.tokens[index])
+                }) {
+                  Image(systemName: "square.and.arrow.down")
+                    .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.tokens[index].trimmingCharacters(in: .whitespaces).isEmpty)
+                .help("Save this token for future sessions")
+
+                if viewModel.tokens.count > 1 || !viewModel.savedTokens.isEmpty {
+                  Button(action: { viewModel.tokens.remove(at: index) }) {
+                    Image(systemName: "minus.circle.fill")
+                      .foregroundColor(.red)
+                  }
+                  .buttonStyle(.plain)
+                }
               }
-              .buttonStyle(.plain)
-              .help("Paste hex token from clipboard")
-              Button(action: {
-                viewModel.tokenToSave = TokenToSave(index: 0, token: viewModel.deviceToken)
-              }) {
-                Image(systemName: "square.and.arrow.down")
-                  .foregroundColor(.secondary)
-              }
-              .buttonStyle(.plain)
-              .disabled(viewModel.deviceToken.trimmingCharacters(in: .whitespaces).isEmpty)
-              .help("Save this token for future sessions")
             }
+
+            Button(action: { viewModel.tokens.append("") }) {
+              HStack {
+                Image(systemName: "plus.circle.fill")
+                Text("Add Token")
+              }
+            }
+            .buttonStyle(.borderless)
+            .padding(.top, 5)
           }
 
           // APNs Configuration
@@ -145,7 +169,7 @@ struct APNsView: View {
               InputField(
                 label: "Image URL",
                 text: $viewModel.imageUrl,
-                helpText: "URL of an image to display in the notification. Requires a Notification Service Extension in the app. Automatically enables Mutable Content. Injected as body._richContent.image in the payload."
+                helpText: "URL of an image to display in the notification. Requires a Notification Service Extension in the app. Automatically enables Mutable Content. Injected as body._richContent.image in the payload. Learn how to create an NSE: https://codewithbeto.dev/rnCourse/expoNotificationsExtension"
               )
             }
           }
@@ -212,7 +236,12 @@ struct APNsView: View {
           let savedToken = SavedToken(label: label, token: item.token)
           SavedTokenStore.nativePush.addToken(savedToken)
           viewModel.savedTokens.append(savedToken)
-          viewModel.deviceToken = ""
+          if item.index < viewModel.tokens.count {
+            viewModel.tokens.remove(at: item.index)
+          }
+          if viewModel.tokens.isEmpty {
+            viewModel.tokens.append("")
+          }
         },
         warningText: "APNs device tokens may change when you reinstall the app or on OS updates."
       )

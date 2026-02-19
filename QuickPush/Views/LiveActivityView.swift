@@ -99,10 +99,10 @@ struct LiveActivityView: View {
       ToastView(message: viewModel.toastMessage, type: viewModel.toastType, isPresented: $viewModel.showToast)
         .animation(.easeInOut, value: viewModel.showToast)
     )
-    .sheet(isPresented: $viewModel.showJSONSheet) {
+    .popover(isPresented: $viewModel.showJSONSheet, arrowEdge: .top) {
       JSONImportExportView(viewModel: viewModel)
     }
-    .sheet(isPresented: $viewModel.showResponseSheet) {
+    .popover(isPresented: $viewModel.showResponseSheet, arrowEdge: .top) {
       APNsResponseDetailView(response: viewModel.lastResponse)
     }
   }

@@ -42,6 +42,10 @@ struct PushNotificationView: View {
   @State private var showResponseSheet: Bool = false
   @State private var showCurlSheet: Bool = false
 
+  // Saved tokens state
+  @State private var savedTokens: [SavedToken] = []
+  @State private var tokenToSave: TokenToSave? = nil
+
   var body: some View {
     VStack {
       // Title and Send Button
@@ -66,10 +70,21 @@ struct PushNotificationView: View {
           showCurlSheet = true
         }
         .controlSize(.small)
-        .disabled(tokens.filter { !$0.isEmpty }.isEmpty || title.isEmpty)
-        Button("Send Push") {
+        .disabled(allValidTokens.isEmpty || title.isEmpty)
+        Button {
           sendPushNotification()
+        } label: {
+          HStack(spacing: 4) {
+            Text("Send Push")
+            HStack(spacing: 1) {
+              Image(systemName: "command")
+              Image(systemName: "return")
+            }
+            .font(.caption2)
+            .foregroundColor(.secondary)
+          }
         }
+        .keyboardShortcut(.return, modifiers: .command)
         .applying { view in
           if #available(macOS 26.0, *) {
             view.buttonStyle(.glassProminent)
@@ -77,7 +92,7 @@ struct PushNotificationView: View {
             view.buttonStyle(.borderedProminent)
           }
         }
-        .disabled(tokens.filter { !$0.isEmpty }.isEmpty)
+        .disabled(allValidTokens.isEmpty)
       }
 
       // Main Content
@@ -89,12 +104,36 @@ struct PushNotificationView: View {
             Text("Expo Push Tokens:")
               .font(.subheadline)
 
+            // Saved tokens (compact display)
+            ForEach(savedTokens) { saved in
+              SavedTokenRowView(
+                savedToken: saved,
+                onToggle: {
+                  if let index = savedTokens.firstIndex(where: { $0.id == saved.id }) {
+                    savedTokens[index].isEnabled.toggle()
+                    SavedTokenStore.shared.saveTokens(savedTokens)
+                  }
+                },
+                onCopy: {
+                  NSPasteboard.general.clearContents()
+                  NSPasteboard.general.setString(saved.token, forType: .string)
+                  showToastNotification(message: "Token copied to clipboard", type: .success)
+                },
+                onRemove: {
+                  SavedTokenStore.shared.removeToken(id: saved.id)
+                  savedTokens.removeAll { $0.id == saved.id }
+                }
+              )
+            }
+
+            // Unsaved token rows (text fields)
             ForEach(tokens.indices, id: \.self) { index in
               HStack(spacing: 8) {
                 TextField("e.g. ExponentPushToken[N1QHiEF4mnLGP8HeQrj9AR]", text: $tokens[index])
                   .textFieldStyle(RoundedBorderTextFieldStyle())
                   .padding(.leading, 4)
 
+                // Paste from clipboard
                 Button(action: {
                   if let clipboardString = NSPasteboard.general.string(forType: .string) {
                     let trimmed = clipboardString.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -111,7 +150,19 @@ struct PushNotificationView: View {
                 .buttonStyle(.plain)
                 .help("Paste from clipboard (ExponentPushToken[xxxxxxxxxxxxxxxxxxxxx])")
 
-                if tokens.count > 1 {
+                // Save token for future sessions
+                Button(action: {
+                  tokenToSave = TokenToSave(index: index, token: tokens[index])
+                }) {
+                  Image(systemName: "square.and.arrow.down")
+                    .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .disabled(tokens[index].trimmingCharacters(in: .whitespaces).isEmpty)
+                .help("Save this token for future sessions")
+
+                // Delete token row
+                if tokens.count > 1 || !savedTokens.isEmpty {
                   Button(action: { tokens.remove(at: index) }) {
                     Image(systemName: "minus.circle.fill")
                       .foregroundColor(.red)
@@ -260,19 +311,42 @@ struct PushNotificationView: View {
       ToastView(message: toastMessage, type: toastType, isPresented: $showToast)
         .animation(.easeInOut, value: showToast)
     )
-    .sheet(isPresented: $showResponseSheet) {
+    .popover(isPresented: $showResponseSheet, arrowEdge: .top) {
       ExpoResponseDetailView(
         response: lastResponse,
         httpStatusCode: lastHttpStatusCode,
         rawJSON: lastRawJSON
       )
     }
-    .sheet(isPresented: $showCurlSheet) {
+    .popover(isPresented: $showCurlSheet, arrowEdge: .top) {
       ExpoCurlCommandView(
         notification: buildNotification(),
         accessToken: accessToken.isEmpty ? nil : accessToken
       )
     }
+    .popover(item: $tokenToSave, arrowEdge: .top) { item in
+      SaveTokenSheet(token: item.token) { label in
+        let savedToken = SavedToken(label: label, token: item.token)
+        SavedTokenStore.shared.addToken(savedToken)
+        savedTokens.append(savedToken)
+
+        // Move from unsaved to saved
+        if item.index < tokens.count {
+          tokens.remove(at: item.index)
+        }
+        if tokens.isEmpty {
+          tokens.append("")
+        }
+      }
+    }
+    .onAppear {
+      savedTokens = SavedTokenStore.shared.loadTokens()
+    }
+  }
+
+  /// All valid tokens from both saved (enabled only) and unsaved sources.
+  private var allValidTokens: [String] {
+    savedTokens.filter(\.isEnabled).map(\.token) + tokens.filter { !$0.isEmpty }
   }
 
   /// Whether the last response contains errors (API-level or per-ticket).
@@ -285,7 +359,7 @@ struct PushNotificationView: View {
 
   /// Build a `PushNotification` from the current form values.
   private func buildNotification() -> PushNotification {
-    let validTokens = tokens.filter { !$0.isEmpty }
+    let validTokens = allValidTokens
     let richContent: PushNotification.RichContent? = imageUrl.isEmpty ? nil : PushNotification.RichContent(image: imageUrl)
 
     return PushNotification(
@@ -309,7 +383,7 @@ struct PushNotificationView: View {
   }
 
   private func sendPushNotification() {
-    let validTokens = tokens.filter { !$0.isEmpty }
+    let validTokens = allValidTokens
 
     guard !validTokens.isEmpty, !title.isEmpty else {
       showTitleError = title.isEmpty
@@ -348,4 +422,13 @@ struct PushNotificationView: View {
     toastType = type
     showToast = true
   }
+}
+
+// MARK: - Token Save Sheet Item
+
+/// Identifiable wrapper for the `.sheet(item:)` presentation.
+struct TokenToSave: Identifiable {
+  let id = UUID()
+  let index: Int
+  let token: String
 }

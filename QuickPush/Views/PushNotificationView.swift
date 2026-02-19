@@ -307,7 +307,8 @@ struct PushNotificationView: View {
         }
       }
     }
-    .padding()
+    .padding(.horizontal)
+    .padding(.top)
     .overlay(
       ToastView(message: toastMessage, type: toastType, isPresented: $showToast)
         .animation(.easeInOut, value: showToast)

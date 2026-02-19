@@ -95,7 +95,8 @@ struct LiveActivityView: View {
         }
       }
     }
-    .padding()
+    .padding(.horizontal)
+    .padding(.top)
     .overlay(
       ToastView(message: viewModel.toastMessage, type: viewModel.toastType, isPresented: $viewModel.showToast)
         .animation(.easeInOut, value: viewModel.showToast)

@@ -43,13 +43,16 @@ final class WindowManager {
   func pin() {
     guard !isPinned else { return }
 
-    // Don't manually dismiss the MenuBarExtra popover — calling close()
-    // on its internal window permanently destroys it. The popover will
-    // auto-dismiss naturally once the floating panel grabs focus.
+    // Dismiss the MenuBarExtra popover by closing every visible window
+    // that isn't our floating panel. The popover is backed by an internal
+    // NSWindow — ordering it out hides it without destroying it.
+    for window in NSApp.windows where window !== panel && window.isVisible {
+      window.orderOut(nil)
+    }
 
     // Create the floating panel if needed
     if panel == nil {
-      let rect = NSRect(x: 0, y: 0, width: 420, height: 600)
+      let rect = NSRect(x: 0, y: 0, width: 420, height: 500)
       let newPanel = FloatingPanel(contentRect: rect)
       newPanel.onClose = { [weak self] in
         self?.unpin()
@@ -61,7 +64,9 @@ final class WindowManager {
     let content = MainContentView()
       .environment(self)
 
-    panel?.contentView = NSHostingView(rootView: content)
+    let hostingView = NSHostingView(rootView: content)
+    hostingView.sizingOptions = [.minSize]
+    panel?.contentView = hostingView
 
     // Show the panel after a brief delay so the popover finishes closing.
     DispatchQueue.main.async { [weak self] in

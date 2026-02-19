@@ -20,7 +20,7 @@ struct PushNotificationView: View {
   @State private var showTitleError: Bool = false
 
   // Advanced fields
-  @State private var showAdvancedSettings: Bool = false
+  @State private var showAdvancedSettings: Bool = true
   @State private var subtitle: String = ""
   @State private var badge: String = ""
   @State private var interruptionLevel: PushNotification.InterruptionLevel = .active
@@ -36,22 +36,28 @@ struct PushNotificationView: View {
   @State private var toastType: ToastType = .success
 
   var body: some View {
-    VStack(spacing: 16) {
+    VStack {
       // Title and Send Button
       HStack {
-        Text("Push Notification")
+        Text("Expo Notification")
           .font(.headline)
         Spacer()
         Button("Send Push") {
           sendPushNotification()
         }
-        .buttonStyle(.borderedProminent)
+        .applying { view in
+          if #available(macOS 26.0, *) {
+            view.buttonStyle(.glassProminent)
+          } else {
+            view.buttonStyle(.borderedProminent)
+          }
+        }
         .disabled(tokens.filter { !$0.isEmpty }.isEmpty)
       }
 
       // Main Content
       ScrollView(.vertical, showsIndicators: false) {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
           // Basic Fields Section
           VStack(alignment: .leading, spacing: 12) {
             // Tokens Section
@@ -59,9 +65,10 @@ struct PushNotificationView: View {
               .font(.subheadline)
 
             ForEach(tokens.indices, id: \.self) { index in
-              HStack {
+              HStack(spacing: 8) {
                 TextField("e.g. ExponentPushToken[N1QHiEF4mnLGP8HeQrj9AR]", text: $tokens[index])
                   .textFieldStyle(RoundedBorderTextFieldStyle())
+                  .padding(.leading, 4)
 
                 Button(action: {
                   if let clipboardString = NSPasteboard.general.string(forType: .string) {
@@ -109,6 +116,7 @@ struct PushNotificationView: View {
               HStack {
                 SecureField("Access token for enhanced security", text: $accessToken)
                   .textFieldStyle(RoundedBorderTextFieldStyle())
+                  .padding(.leading, 4)
 
                 Button(action: {
                   if let clipboardString = NSPasteboard.general.string(forType: .string) {

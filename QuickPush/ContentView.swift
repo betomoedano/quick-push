@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum AppTab: String, CaseIterable {
-  case pushNotification = "Push Notification"
+  case pushNotification = "Expo Notification"
   case liveActivity = "Live Activity"
 }
 
@@ -24,9 +24,7 @@ struct ContentView: View {
         }
       }
       .pickerStyle(.segmented)
-      .padding(.horizontal)
       .padding(.top, 12)
-      .padding(.bottom, 8)
 
       // Tab Content
       switch selectedTab {
@@ -36,7 +34,7 @@ struct ContentView: View {
         LiveActivityView()
       }
     }
-    .frame(minHeight: 410, maxHeight: 700)
+    .frame(minHeight: 410)
   }
 }
 

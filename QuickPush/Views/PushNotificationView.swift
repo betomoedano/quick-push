@@ -35,6 +35,13 @@ struct PushNotificationView: View {
   @State private var toastMessage: String = ""
   @State private var toastType: ToastType = .success
 
+  // Response & cURL sheet state
+  @State private var lastResponse: PushResponse?
+  @State private var lastHttpStatusCode: Int?
+  @State private var lastRawJSON: String?
+  @State private var showResponseSheet: Bool = false
+  @State private var showCurlSheet: Bool = false
+
   var body: some View {
     VStack {
       // Title and Send Button
@@ -42,6 +49,24 @@ struct PushNotificationView: View {
         Text("Expo Notification")
           .font(.headline)
         Spacer()
+        if lastResponse != nil {
+          Button {
+            showResponseSheet = true
+          } label: {
+            HStack(spacing: 4) {
+              Circle()
+                .fill(responseHasErrors ? Color.red : Color.green)
+                .frame(width: 6, height: 6)
+              Text("Response")
+            }
+          }
+          .controlSize(.small)
+        }
+        Button("cURL") {
+          showCurlSheet = true
+        }
+        .controlSize(.small)
+        .disabled(tokens.filter { !$0.isEmpty }.isEmpty || title.isEmpty)
         Button("Send Push") {
           sendPushNotification()
         }
@@ -235,26 +260,37 @@ struct PushNotificationView: View {
       ToastView(message: toastMessage, type: toastType, isPresented: $showToast)
         .animation(.easeInOut, value: showToast)
     )
+    .sheet(isPresented: $showResponseSheet) {
+      ExpoResponseDetailView(
+        response: lastResponse,
+        httpStatusCode: lastHttpStatusCode,
+        rawJSON: lastRawJSON
+      )
+    }
+    .sheet(isPresented: $showCurlSheet) {
+      ExpoCurlCommandView(
+        notification: buildNotification(),
+        accessToken: accessToken.isEmpty ? nil : accessToken
+      )
+    }
   }
 
-  private func sendPushNotification() {
+  /// Whether the last response contains errors (API-level or per-ticket).
+  private var responseHasErrors: Bool {
+    guard let response = lastResponse else { return false }
+    if let errors = response.errors, !errors.isEmpty { return true }
+    if let tickets = response.data, tickets.contains(where: { $0.status == "error" }) { return true }
+    return false
+  }
+
+  /// Build a `PushNotification` from the current form values.
+  private func buildNotification() -> PushNotification {
     let validTokens = tokens.filter { !$0.isEmpty }
-
-    guard !validTokens.isEmpty, !title.isEmpty else {
-      showTitleError = title.isEmpty
-      if title.isEmpty {
-        showToastNotification(message: "Title is required", type: .error)
-      }
-      return
-    }
-
-    showTitleError = false
-
     let richContent: PushNotification.RichContent? = imageUrl.isEmpty ? nil : PushNotification.RichContent(image: imageUrl)
 
-    let notification = PushNotification(
-      to: validTokens,
-      title: title,
+    return PushNotification(
+      to: validTokens.isEmpty ? ["ExponentPushToken[...]"] : validTokens,
+      title: title.isEmpty ? "Title" : title,
       body: notificationBody.isEmpty ? " " : notificationBody,
       data: data.isEmpty ? nil : data,
       ttl: Int(ttl),
@@ -270,6 +306,22 @@ struct PushNotificationView: View {
       contentAvailable: contentAvailable,
       richContent: richContent
     )
+  }
+
+  private func sendPushNotification() {
+    let validTokens = tokens.filter { !$0.isEmpty }
+
+    guard !validTokens.isEmpty, !title.isEmpty else {
+      showTitleError = title.isEmpty
+      if title.isEmpty {
+        showToastNotification(message: "Title is required", type: .error)
+      }
+      return
+    }
+
+    showTitleError = false
+
+    let notification = buildNotification()
 
     PushNotificationService.shared.sendPushNotification(
       notification: notification,
@@ -277,8 +329,11 @@ struct PushNotificationView: View {
     ) { result in
       DispatchQueue.main.async {
         switch result {
-        case .success(let response):
-          print("Push sent successfully: \(response)")
+        case .success(let sendResult):
+          lastResponse = sendResult.response
+          lastHttpStatusCode = sendResult.httpStatusCode
+          lastRawJSON = sendResult.rawJSON
+          print("Push sent successfully: \(sendResult.response)")
           showToastNotification(message: "Push notification sent successfully!", type: .success)
         case .failure(let error):
           print("Failed to send push: \(error.localizedDescription)")

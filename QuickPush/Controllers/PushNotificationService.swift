@@ -12,12 +12,19 @@ class PushNotificationService {
   
   private let expoPushEndpoint = "https://exp.host/--/api/v2/push/send"
   
-  func sendPushNotification(notification: PushNotification, accessToken: String? = nil, completion: @escaping (Result<PushResponse, Error>) -> Void) {
+  /// Result containing the decoded response, HTTP status code, and raw JSON string.
+  struct SendResult {
+    let response: PushResponse
+    let httpStatusCode: Int?
+    let rawJSON: String?
+  }
+
+  func sendPushNotification(notification: PushNotification, accessToken: String? = nil, completion: @escaping (Result<SendResult, Error>) -> Void) {
     guard let url = URL(string: expoPushEndpoint) else {
       completion(.failure(APIError.invalidURL))
       return
     }
-    
+
     // Prepare request
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -25,12 +32,12 @@ class PushNotificationService {
     request.setValue("application/json", forHTTPHeaderField: "accept")
     request.setValue("gzip, deflate", forHTTPHeaderField: "accept-encoding")
     request.setValue("application/json", forHTTPHeaderField: "content-type")
-    
+
     // Add authorization header if access token is provided
     if let accessToken = accessToken, !accessToken.isEmpty {
       request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
     }
-    
+
     do {
       let jsonData = try JSONEncoder().encode(notification)
       request.httpBody = jsonData
@@ -38,7 +45,7 @@ class PushNotificationService {
       completion(.failure(APIError.encodingFailed))
       return
     }
-    
+
     // Perform network request
     URLSession.shared.dataTask(with: request) { data, response, error in
       // Handle network errors
@@ -46,29 +53,42 @@ class PushNotificationService {
         completion(.failure(error))
         return
       }
-      
+
+      let httpStatusCode = (response as? HTTPURLResponse)?.statusCode
+
       // Ensure we have valid data
       guard let data = data else {
         completion(.failure(APIError.noData))
         return
       }
-      
+
+      let rawJSON = Self.prettyPrint(data)
+
       // Decode API response
       do {
         let responseObject = try JSONDecoder().decode(PushResponse.self, from: data)
-        
+
         // UNAUTHORIZED REQUESTS CHECK - Possibly no Access Token
         if let errors = responseObject.errors,
            errors.contains(where: { $0.code == "UNAUTHORIZED" }) {
           completion(.failure(APIError.insufficientPermissions))
           return
         }
-        
-        completion(.success(responseObject))
+
+        completion(.success(SendResult(response: responseObject, httpStatusCode: httpStatusCode, rawJSON: rawJSON)))
       } catch {
         completion(.failure(APIError.decodingFailed))
       }
     }.resume()
+  }
+
+  /// Pretty-print raw JSON data for display.
+  private static func prettyPrint(_ data: Data) -> String? {
+    guard let json = try? JSONSerialization.jsonObject(with: data),
+          let pretty = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted) else {
+      return String(data: data, encoding: .utf8)
+    }
+    return String(data: pretty, encoding: .utf8)
   }
 }
 

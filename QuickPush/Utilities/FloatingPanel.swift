@@ -93,6 +93,9 @@ final class FloatingPanel: NSPanel {
   override var canBecomeKey: Bool { true }
   override var canBecomeMain: Bool { true }
 
+  /// Swallow the Escape key so it doesn't close the pinned panel.
+  override func cancelOperation(_ sender: Any?) { }
+
   /// Save the panel frame whenever it moves or resizes.
   func saveFrame() {
     UserDefaults.standard.set(NSStringFromRect(frame), forKey: "FloatingPanelFrame")

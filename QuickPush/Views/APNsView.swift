@@ -108,6 +108,7 @@ struct APNsView: View {
                     .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
+                .focusable(false)
                 .help("Paste hex token from clipboard")
 
                 Button(action: {
@@ -117,6 +118,7 @@ struct APNsView: View {
                     .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
+                .focusable(false)
                 .disabled(viewModel.tokens[index].trimmingCharacters(in: .whitespaces).isEmpty)
                 .help("Save this token for future sessions")
 
@@ -126,6 +128,7 @@ struct APNsView: View {
                       .foregroundColor(.red)
                   }
                   .buttonStyle(.plain)
+                  .focusable(false)
                 }
               }
             }

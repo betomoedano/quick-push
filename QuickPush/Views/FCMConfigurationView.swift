@@ -9,10 +9,17 @@ import SwiftUI
 
 struct FCMConfigurationView: View {
   @Bindable var config: FCMConfigStore
-  @State private var isExpanded: Bool = true
 
   private var isValid: Bool {
     !config.projectId.isEmpty && !config.clientEmail.isEmpty && config.hasServiceAccount
+  }
+
+  @State private var isExpanded: Bool = false
+
+  init(config: FCMConfigStore) {
+    self.config = config
+    // Start collapsed if already configured, expanded if not yet set up
+    _isExpanded = State(initialValue: !config.hasServiceAccount)
   }
 
   var body: some View {

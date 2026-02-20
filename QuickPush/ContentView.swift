@@ -183,6 +183,7 @@ struct HelpButton: View {
       .frame(width: 300)
     }
     .buttonStyle(PlainButtonStyle())
+    .focusable(false)
   }
 
   private var attributedHelpText: AttributedString {

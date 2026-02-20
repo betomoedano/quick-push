@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct FCMView: View {
   var isActive: Bool = true
@@ -108,6 +109,7 @@ struct FCMView: View {
                     .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
+                .focusable(false)
                 .help("Paste token from clipboard")
 
                 Button(action: {
@@ -117,6 +119,7 @@ struct FCMView: View {
                     .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
+                .focusable(false)
                 .disabled(viewModel.tokens[index].trimmingCharacters(in: .whitespaces).isEmpty)
                 .help("Save this token for future sessions")
 
@@ -126,6 +129,7 @@ struct FCMView: View {
                       .foregroundColor(.red)
                   }
                   .buttonStyle(.plain)
+                  .focusable(false)
                 }
               }
             }
@@ -169,11 +173,31 @@ struct FCMView: View {
                 .padding(.top, 4)
               InputField(label: "Channel ID", text: $viewModel.channelId, helpText: "Android notification channel ID. The app must create this channel. Use \"default\" for the default channel.")
               InputField(label: "Sound", text: $viewModel.sound, helpText: "Sound to play. Use \"default\" for the device default sound.")
-              InputField(
-                label: "Color",
-                text: $viewModel.color,
-                helpText: "Hex color that tints the notification's small icon in the status bar (e.g. FF5733 — no # prefix). This affects the icon accent color, not the notification background. Visibility depends on Android version and device."
-              )
+              // Color row: hex input + presets + color picker
+              HStack(spacing: 6) {
+                Text("Color:")
+                TextField("e.g. FF5733", text: $viewModel.color)
+                  .textFieldStyle(.roundedBorder)
+                ForEach(["FF3B30", "FF9500", "007AFF"], id: \.self) { preset in
+                  Circle()
+                    .fill(Color(hex: preset))
+                    .frame(width: 18, height: 18)
+                    .overlay(
+                      Circle()
+                        .stroke(
+                          viewModel.color.uppercased() == preset
+                            ? Color.primary.opacity(0.7) : Color.clear,
+                          lineWidth: 2
+                        )
+                        .padding(-2)
+                    )
+                    .onTapGesture { viewModel.color = preset }
+                }
+                FCMColorWell(hex: $viewModel.color)
+                  .frame(width: 22, height: 22)
+                  .padding(.leading, 4)
+                HelpButton(helpText: "Hex color that tints the notification's small icon in the status bar (e.g. FF5733 — no # prefix). This affects the icon accent color, not the notification background. Visibility depends on Android version and device.")
+              }
             }
           }
 
@@ -221,6 +245,38 @@ struct FCMView: View {
         },
         warningText: "FCM registration tokens may change when the user reinstalls the app or clears app data."
       )
+    }
+  }
+}
+
+// MARK: - Native color well (renders as a square swatch, opens system color panel)
+
+private struct FCMColorWell: NSViewRepresentable {
+  @Binding var hex: String
+
+  func makeNSView(context: Context) -> NSColorWell {
+    let well = NSColorWell()
+    well.color = NSColor(Color(hex: hex))
+    well.target = context.coordinator
+    well.action = #selector(Coordinator.colorChanged(_:))
+    return well
+  }
+
+  func updateNSView(_ well: NSColorWell, context: Context) {
+    // Only update when the hex actually differs to avoid infinite loops
+    if Color(nsColor: well.color).toHexString() != hex.uppercased() {
+      well.color = NSColor(Color(hex: hex))
+    }
+  }
+
+  func makeCoordinator() -> Coordinator { Coordinator(hex: $hex) }
+
+  final class Coordinator: NSObject {
+    @Binding var hex: String
+    init(hex: Binding<String>) { _hex = hex }
+
+    @objc func colorChanged(_ sender: NSColorWell) {
+      hex = Color(nsColor: sender.color).toHexString()
     }
   }
 }

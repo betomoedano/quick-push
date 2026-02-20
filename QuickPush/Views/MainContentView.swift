@@ -17,7 +17,6 @@ struct MainContentView: View {
       Divider()
       FooterView()
     }
-    .frame(minWidth: 520)
-    .background(Color(nsColor: .windowBackgroundColor).opacity(0.9))
+    .frame(minWidth: 570)
   }
 }

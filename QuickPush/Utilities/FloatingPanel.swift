@@ -42,9 +42,9 @@ final class FloatingPanel: NSPanel {
     isOpaque = false
     backgroundColor = .clear
 
-    // Frosted glass background
+    // Match the menu bar popover appearance
     let blurView = NSVisualEffectView()
-    blurView.material = .hudWindow
+    blurView.material = .popover
     blurView.blendingMode = .behindWindow
     blurView.state = .active
     contentView = blurView
@@ -79,7 +79,7 @@ final class FloatingPanel: NSPanel {
     }
 
     // Minimum size to keep the UI usable
-    minSize = NSSize(width: 520, height: 460)
+    minSize = NSSize(width: 570, height: 460)
 
     // Restore saved position or center on screen
     if let frameString = UserDefaults.standard.string(forKey: "FloatingPanelFrame"),

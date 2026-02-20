@@ -9,12 +9,19 @@ import Foundation
 
 class PushNotificationService {
   static let shared = PushNotificationService() // Singleton instance
-  
+
   private let expoPushEndpoint = "https://exp.host/--/api/v2/push/send"
-  
+  private let expoReceiptsEndpoint = "https://exp.host/--/api/v2/push/getReceipts"
+
   /// Result containing the decoded response, HTTP status code, and raw JSON string.
   struct SendResult {
     let response: PushResponse
+    let httpStatusCode: Int?
+    let rawJSON: String?
+  }
+
+  struct ReceiptResult {
+    let response: ReceiptResponse
     let httpStatusCode: Int?
     let rawJSON: String?
   }
@@ -76,6 +83,59 @@ class PushNotificationService {
         }
 
         completion(.success(SendResult(response: responseObject, httpStatusCode: httpStatusCode, rawJSON: rawJSON)))
+      } catch {
+        completion(.failure(APIError.decodingFailed))
+      }
+    }.resume()
+  }
+
+  func checkReceipts(
+    ids: [String],
+    accessToken: String? = nil,
+    completion: @escaping (Result<ReceiptResult, Error>) -> Void
+  ) {
+    guard let url = URL(string: expoReceiptsEndpoint) else {
+      completion(.failure(APIError.invalidURL))
+      return
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("exp.host", forHTTPHeaderField: "host")
+    request.setValue("application/json", forHTTPHeaderField: "accept")
+    request.setValue("gzip, deflate", forHTTPHeaderField: "accept-encoding")
+    request.setValue("application/json", forHTTPHeaderField: "content-type")
+
+    if let accessToken = accessToken, !accessToken.isEmpty {
+      request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+    }
+
+    do {
+      let body = ["ids": ids]
+      request.httpBody = try JSONSerialization.data(withJSONObject: body)
+    } catch {
+      completion(.failure(APIError.encodingFailed))
+      return
+    }
+
+    URLSession.shared.dataTask(with: request) { data, response, error in
+      if let error = error {
+        completion(.failure(error))
+        return
+      }
+
+      let httpStatusCode = (response as? HTTPURLResponse)?.statusCode
+
+      guard let data = data else {
+        completion(.failure(APIError.noData))
+        return
+      }
+
+      let rawJSON = Self.prettyPrint(data)
+
+      do {
+        let responseObject = try JSONDecoder().decode(ReceiptResponse.self, from: data)
+        completion(.success(ReceiptResult(response: responseObject, httpStatusCode: httpStatusCode, rawJSON: rawJSON)))
       } catch {
         completion(.failure(APIError.decodingFailed))
       }

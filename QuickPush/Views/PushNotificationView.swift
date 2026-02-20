@@ -43,6 +43,7 @@ struct PushNotificationView: View {
   @State private var lastRawJSON: String?
   @State private var showResponseSheet: Bool = false
   @State private var showCurlSheet: Bool = false
+  @State private var showReceiptSheet: Bool = false
 
   // Saved tokens state
   @State private var savedTokens: [SavedToken] = []
@@ -65,6 +66,12 @@ struct PushNotificationView: View {
                 .frame(width: 6, height: 6)
               Text("Response")
             }
+          }
+          .controlSize(.small)
+        }
+        if !lastTicketIds.isEmpty {
+          Button("Receipt") {
+            showReceiptSheet = true
           }
           .controlSize(.small)
         }
@@ -333,6 +340,12 @@ struct PushNotificationView: View {
         accessToken: accessToken.isEmpty ? nil : accessToken
       )
     }
+    .adaptivePresentation(isPresented: $showReceiptSheet, isPinned: windowManager.isPinned) {
+      ExpoReceiptView(
+        ticketIds: lastTicketIds,
+        accessToken: accessToken.isEmpty ? nil : accessToken
+      )
+    }
     .adaptivePresentation(item: $tokenToSave, isPinned: windowManager.isPinned) { item in
       SaveTokenSheet(token: item.token) { label in
         let savedToken = SavedToken(label: label, token: item.token)
@@ -356,6 +369,11 @@ struct PushNotificationView: View {
   /// All valid tokens from both saved (enabled only) and unsaved sources.
   private var allValidTokens: [String] {
     savedTokens.filter(\.isEnabled).map(\.token) + tokens.filter { !$0.isEmpty }
+  }
+
+  /// Ticket IDs from the last successful send (status == "ok" tickets only).
+  private var lastTicketIds: [String] {
+    lastResponse?.data?.compactMap { $0.id } ?? []
   }
 
   /// Whether the last response contains errors (API-level or per-ticket).

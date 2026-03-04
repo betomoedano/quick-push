@@ -17,6 +17,10 @@
   </a>
 </p>
 
+<p align="center">
+  <a href="https://youtu.be/dB-gkYdTi3o">📺 Watch it in action</a>
+</p>
+
 ### Features
 
 - Send test push notifications to your Expo apps directly from the menu bar

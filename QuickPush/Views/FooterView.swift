@@ -59,6 +59,13 @@ struct FooterView: View {
           Image(systemName: windowManager.isPinned ? "pin.slash.fill" : "pin.fill")
         }
         .help(windowManager.isPinned ? "Unpin Window" : "Pin Window (⌘⇧P)")
+
+        Button {
+          NSApplication.shared.terminate(nil)
+        } label: {
+          Image(systemName: "power")
+        }
+        .help("Quit QuickPush (⌘Q)")
       }
       .buttonStyle(.borderless)
       .imageScale(.medium)

@@ -83,7 +83,6 @@ struct KeyValueInputView: View {
     private func sanitizeKey(_ key: String) -> String {
         let allowedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
         return key
-            .lowercased()
             .replacingOccurrences(of: " ", with: "-") // Replace spaces with "-"
             .components(separatedBy: allowedCharacters.inverted) // Remove special characters
             .joined()
